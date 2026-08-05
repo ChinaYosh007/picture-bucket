@@ -14,4 +14,4 @@ The Maven multi-module backend is located in `picture-bucket-backend`.
 
 ## Frontend
 
-`picture-bucket-frontend` is reserved for the frontend application.
+The Vite + Vue frontend is located in `picture-bucket-frontend`.
