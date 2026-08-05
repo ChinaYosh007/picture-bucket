@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HealthController {
 
-    public static final String URL = "http://localhost:8080/api/swagger-ui.html";
+    /** 用于部署探活，不访问数据库或外部服务。 */
     @GetMapping("/health")
-    public BaseResponse health() {
+    public BaseResponse<String> health() {
         return ResultUtils.success("success");
     }
 }

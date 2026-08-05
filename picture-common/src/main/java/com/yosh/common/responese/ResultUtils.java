@@ -2,7 +2,11 @@ package com.yosh.common.responese;
 
 import com.yosh.common.exception.ErrorCode;
 
-public class ResultUtils {
+/** 统一创建接口响应。 */
+public final class ResultUtils {
+
+    private ResultUtils() {
+    }
 
     /**
      * 成功
@@ -13,6 +17,9 @@ public class ResultUtils {
      */
     public static <T> BaseResponse<T> success(T data) {
         return new BaseResponse<>(0, data, "ok");
+    }
+    public static BaseResponse<Void> success() {
+        return new BaseResponse<>(0, null, "ok");
     }
 
     /**

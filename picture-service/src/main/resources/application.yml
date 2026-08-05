@@ -2,7 +2,12 @@ server:
   port: 8080
   servlet:
     context-path: /api
+    session:
+      cookie:
+        max-age: 7d
 spring:
+  config:
+    import: optional:file:./.env[.properties],optional:file:./picture-service/.env[.properties]
   application:
     name: picture-service
   datasource:
@@ -15,6 +20,30 @@ spring:
       schema-locations: classpath:db/schema.sql
       data-locations: classpath:db/data.sql
       mode: never
+  data:
+    redis:
+      host: ${RDS_HOST}
+      port: ${RDS_PORT}
+      username: ${RDS_USER}
+      password: ${RDS_PASS}
+      database: 2
+      timeout: 5000
+  session:
+    store-type: redis
+    timeout: 7d
+    redis:
+      namespace: picture-bucket:session
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      "[mail.smtp.auth]": true
+      "[mail.smtp.ssl.enable]": true
+      "[mail.smtp.connectiontimeout]": 30000
+      "[mail.smtp.timeout]": 30000
+      "[mail.smtp.writetimeout]": 30000
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false

@@ -18,6 +18,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <hutool.version>5.8.26</hutool.version>
+        <mybatis-plus.version>3.5.17</mybatis-plus.version>
     </properties>
     <modules>
         <module>picture-service</module>
