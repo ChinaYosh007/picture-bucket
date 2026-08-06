@@ -1,58 +1,65 @@
 <template>
   <div id="pictureManagePage">
-    <a-flex justify="space-between">
-      <h2>图片管理</h2>
-      <a-space>
+    <AdminPageHeader title="图片管理" subtitle="审核、编辑与维护平台全部图片">
+      <template #actions>
         <a-button type="primary" href="/add_picture" target="_blank">+ 创建图片</a-button>
-        <a-button type="primary" href="/add_picture/batch" target="_blank" ghost>+ 批量创建图片</a-button>
-      </a-space>
-    </a-flex>
-    <div style="margin-bottom: 16px" />
+        <a-button type="primary" href="/add_picture/batch" target="_blank" ghost>
+          + 批量创建图片
+        </a-button>
+      </template>
+    </AdminPageHeader>
     <!-- 搜索表单 -->
-    <a-form layout="inline" :model="searchParams" @finish="doSearch">
-      <a-form-item label="关键词">
-        <a-input
-          v-model:value="searchParams.searchText"
-          placeholder="从名称和简介搜索"
-          allow-clear
-        />
-      </a-form-item>
-      <a-form-item label="类型">
-        <a-input v-model:value="searchParams.category" placeholder="请输入类型" allow-clear />
-      </a-form-item>
-      <a-form-item label="标签">
-        <a-select
-          v-model:value="searchParams.tags"
-          mode="tags"
-          placeholder="请输入标签"
-          style="min-width: 180px"
-          allow-clear
-        />
-      </a-form-item>
-      <a-form-item name="reviewStatus" label="审核状态">
-        <a-select
-          v-model:value="searchParams.reviewStatus"
-          style="min-width: 180px"
-          placeholder="请选择审核状态"
-          :options="PIC_REVIEW_STATUS_OPTIONS"
-          allow-clear
-        />
-      </a-form-item>
-      <a-form-item>
-        <a-button type="primary" html-type="submit">搜索</a-button>
-      </a-form-item>
-    </a-form>
+    <a-card class="admin-panel" :bordered="false">
+      <a-form layout="inline" :model="searchParams" @finish="doSearch">
+        <a-form-item label="关键词">
+          <a-input
+            v-model:value="searchParams.searchText"
+            placeholder="从名称和简介搜索"
+            allow-clear
+          />
+        </a-form-item>
+        <a-form-item label="类型">
+          <a-input v-model:value="searchParams.category" placeholder="请输入类型" allow-clear />
+        </a-form-item>
+        <a-form-item label="标签">
+          <a-select
+            v-model:value="searchParams.tags"
+            mode="tags"
+            placeholder="请输入标签"
+            style="min-width: 180px"
+            allow-clear
+          />
+        </a-form-item>
+        <a-form-item name="reviewStatus" label="审核状态">
+          <a-select
+            v-model:value="searchParams.reviewStatus"
+            style="min-width: 180px"
+            placeholder="请选择审核状态"
+            :options="PIC_REVIEW_STATUS_OPTIONS"
+            allow-clear
+          />
+        </a-form-item>
+        <a-form-item>
+          <a-button type="primary" html-type="submit">搜索</a-button>
+        </a-form-item>
+      </a-form>
+    </a-card>
     <div style="margin-bottom: 16px" />
     <!-- 表格 -->
-    <a-table
-      :columns="columns"
-      :data-source="dataList"
-      :pagination="pagination"
-      @change="doTableChange"
-    >
+    <a-card class="admin-table-card" :bordered="false">
+      <a-table
+        class="compact-admin-table"
+        :columns="columns"
+        :data-source="dataList"
+        :pagination="pagination"
+        :row-key="(record: API.Picture) => record.id ?? ''"
+        :scroll="{ x: 1500 }"
+        size="small"
+        @change="doTableChange"
+      >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'url'">
-          <a-image :src="record.url" :width="120" />
+          <a-image class="picture-thumb" :src="record.url" :width="64" :height="64" />
         </template>
         <template v-if="column.dataIndex === 'tags'">
           <a-space wrap>
@@ -69,7 +76,7 @@
           <div>大小：{{ (record.picSize / 1024).toFixed(2) }}KB</div>
         </template>
         <template v-if="column.dataIndex === 'reviewMessage'">
-          <div>审核状态：{{ PIC_REVIEW_STATUS_MAP[record.reviewStatus] }}</div>
+          <div>审核状态：{{ PIC_REVIEW_STATUS_MAP[Number(record.reviewStatus)] }}</div>
           <div>审核信息：{{ record.reviewMessage }}</div>
           <div>审核人：{{ record.reviewerId }}</div>
           <div v-if="record.reviewTime">
@@ -106,7 +113,8 @@
           </a-space>
         </template>
       </template>
-    </a-table>
+      </a-table>
+    </a-card>
   </div>
 </template>
 <script lang="ts" setup>
@@ -123,63 +131,77 @@ import {
   PIC_REVIEW_STATUS_OPTIONS,
 } from '../../constants/picture.ts'
 import dayjs from 'dayjs'
+import AdminPageHeader from '@/components/AdminPageHeader.vue'
 
 const columns = [
   {
     title: 'id',
     dataIndex: 'id',
-    width: 80,
+    width: 130,
+    ellipsis: true,
   },
   {
     title: '图片',
     dataIndex: 'url',
+    width: 88,
   },
   {
     title: '名称',
     dataIndex: 'name',
+    width: 128,
+    ellipsis: true,
   },
   {
     title: '简介',
     dataIndex: 'introduction',
+    width: 160,
     ellipsis: true,
   },
   {
     title: '类型',
     dataIndex: 'category',
+    width: 90,
   },
   {
     title: '标签',
     dataIndex: 'tags',
+    width: 130,
   },
   {
     title: '图片信息',
     dataIndex: 'picInfo',
+    width: 126,
   },
   {
     title: '用户 id',
     dataIndex: 'userId',
-    width: 80,
+    width: 120,
   },
   {
     title: '空间 id',
     dataIndex: 'spaceId',
-    width: 80,
+    width: 112,
   },
   {
     title: '审核信息',
     dataIndex: 'reviewMessage',
+    width: 160,
   },
   {
     title: '创建时间',
     dataIndex: 'createTime',
+    width: 152,
   },
   {
     title: '编辑时间',
     dataIndex: 'editTime',
+    width: 152,
   },
   {
     title: '操作',
     key: 'action',
+    width: 116,
+    fixed: 'right',
   },
 ]
 
@@ -221,7 +243,7 @@ const pagination = computed(() => {
     pageSize: searchParams.pageSize,
     total: total.value,
     showSizeChanger: true,
-    showTotal: (total) => `共 ${total} 条`,
+    showTotal: (total: number) => `共 ${total} 条`,
   }
 })
 
@@ -240,7 +262,7 @@ const doSearch = () => {
 }
 
 // 删除数据
-const doDelete = async (id: string) => {
+const doDelete = async (id: string | number) => {
   if (!id) {
     return
   }
@@ -272,3 +294,29 @@ const handleReview = async (record: API.Picture, reviewStatus: number) => {
   }
 }
 </script>
+
+<style scoped>
+.compact-admin-table :deep(.ant-table) {
+  table-layout: fixed;
+}
+
+.compact-admin-table :deep(.ant-table-thead > tr > th) {
+  padding: 9px 10px;
+  color: var(--pb-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.compact-admin-table :deep(.ant-table-tbody > tr > td) {
+  padding: 10px;
+  color: #4e536b;
+  font-size: 13px;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+
+.picture-thumb :deep(img) {
+  border-radius: 10px;
+  object-fit: cover;
+}
+</style>

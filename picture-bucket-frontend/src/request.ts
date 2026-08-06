@@ -7,11 +7,12 @@ import { message } from 'ant-design-vue'
  * - context-path: /api
  * - 前端开发端口: 5173
  */
-const DEV_BASE_URL = 'http://localhost:8080'
-// const PROD_BASE_URL = ''
+// 默认使用同源 API：开发环境由 Vite 代理转发，生产环境使用站点自身的 /api。
+// 如确实需要跨域 API，可通过 VITE_API_BASE_URL 显式配置。
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 const myAxios = axios.create({
-  baseURL: DEV_BASE_URL,
+  baseURL: API_BASE_URL,
   timeout: 10000,
   withCredentials: true,
 })

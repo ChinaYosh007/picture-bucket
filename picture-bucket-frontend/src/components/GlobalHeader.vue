@@ -1,14 +1,14 @@
 <template>
   <div id="globalHeader">
     <a-row :wrap="false" align="middle">
-      <a-col flex="220px">
+      <a-col flex="240px">
         <router-link to="/">
           <div class="title-bar">
             <div class="logo-mark">
               <img class="logo" src="../assets/logo.png" alt="logo" />
             </div>
             <div class="brand">
-              <div class="title">Picture Bucket</div>
+              <div class="title">PICTURE BUCKET</div>
               <div class="subtitle">Cloud Gallery</div>
             </div>
           </div>
@@ -29,7 +29,7 @@
             <a-dropdown>
               <a class="user-chip" @click.prevent>
                 <a-space>
-                  <a-avatar :src="loginUserStore.loginUser.userAvatar" :size="32" />
+                  <a-avatar :src="loginUserStore.loginUser.userAvatar" :size="30" />
                   <span class="user-name">{{ loginUserStore.loginUser.userName ?? '用户' }}</span>
                 </a-space>
               </a>
@@ -41,6 +41,10 @@
                       我的空间
                     </router-link>
                   </a-menu-item>
+                  <a-menu-item @click="profileModalOpen = true">
+                    <ProfileOutlined />
+                    个人资料
+                  </a-menu-item>
                   <a-menu-item @click="doLogout">
                     <LogoutOutlined />
                     退出登录
@@ -48,6 +52,8 @@
                 </a-menu>
               </template>
             </a-dropdown>
+
+            <UserProfileEditModal v-model:open="profileModalOpen" />
           </div>
           <div v-else class="auth-actions">
             <a-button type="text" href="/user/login">登录</a-button>
@@ -61,14 +67,16 @@
 
 <script lang="ts" setup>
 import { computed, h, ref } from 'vue'
-import { HomeOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
+import { HomeOutlined, LogoutOutlined, ProfileOutlined, UserOutlined } from '@ant-design/icons-vue'
 import type { MenuProps } from 'ant-design-vue'
 import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
 import { userLogoutUsingPost } from '@/api/userController.ts'
+import UserProfileEditModal from '@/components/UserProfileEditModal.vue'
 
 const loginUserStore = useLoginUserStore()
+const profileModalOpen = ref(false)
 
 const originItems = [
   {
@@ -149,24 +157,30 @@ const doLogout = async () => {
 #globalHeader .title-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 72px;
+  gap: 12px;
+  height: 68px;
 }
 
 .logo-mark {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: 14px;
   display: grid;
   place-items: center;
-  background: linear-gradient(145deg, #f1f2ff, #e2e8ff);
-  box-shadow: 0 8px 18px rgba(109, 116, 207, 0.16);
+  background: linear-gradient(145deg, #eef0ff, #e0f7ff);
+  box-shadow: 0 8px 20px rgba(108, 92, 231, 0.2);
   overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.title-bar:hover .logo-mark {
+  transform: rotate(-8deg) scale(1.06);
+  box-shadow: 0 12px 26px rgba(108, 92, 231, 0.3);
 }
 
 .logo {
-  height: 28px;
-  width: 28px;
+  height: 26px;
+  width: 26px;
   object-fit: contain;
 }
 
@@ -174,64 +188,81 @@ const doLogout = async () => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  line-height: 1.15;
+  line-height: 1.2;
 }
 
 .title {
-  color: #293247;
   font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: var(--pb-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .subtitle {
-  color: #8e9bb0;
-  font-size: 11px;
-  font-weight: 500;
+  color: var(--pb-faint);
+  font-size: 10px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.14em;
 }
 
 .nav-menu {
   background: transparent !important;
-  line-height: 70px;
+  line-height: 66px;
   border-bottom: none !important;
 }
 
 .nav-menu :deep(.ant-menu-item) {
-  margin-inline: 4px;
+  margin-inline: 3px;
   padding-inline: 14px;
-  border-radius: 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pb-muted);
+  transition: color 0.2s ease, background 0.25s ease, transform 0.2s ease;
 }
 
 .nav-menu :deep(.ant-menu-item::after) {
   display: none;
 }
 
+.nav-menu :deep(.ant-menu-item:hover) {
+  color: var(--pb-ink) !important;
+  background: rgba(108, 92, 231, 0.06);
+  transform: translateY(-1px);
+}
+
 .nav-menu :deep(.ant-menu-item-selected) {
-  color: #5962bc !important;
-  background: #eef0ff;
+  color: var(--pb-violet) !important;
+  background: linear-gradient(120deg, rgba(108, 92, 231, 0.12), rgba(56, 189, 248, 0.1)) !important;
 }
 
 .user-login-status {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  height: 72px;
+  height: 68px;
 }
 
 .user-chip {
   display: inline-flex;
-  padding: 4px 10px 4px 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid #e5e9f2;
-  transition: all 0.2s ease;
+  align-items: center;
+  padding: 0;
+  color: inherit;
+  transition: color 0.2s ease;
 }
 
 .user-chip:hover {
-  border-color: #c7cdf6;
-  background: #f3f4ff;
+  color: var(--pb-violet);
+}
+
+.user-chip:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid rgba(108, 92, 231, 0.45);
+  outline-offset: 4px;
 }
 
 .user-name {
@@ -239,7 +270,7 @@ const doLogout = async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #334155;
+  color: var(--pb-ink);
   font-size: 13px;
 }
 
@@ -249,9 +280,17 @@ const doLogout = async () => {
   gap: 4px;
 }
 
+.auth-actions :deep(.ant-btn-text) {
+  color: var(--pb-muted);
+}
+
+.auth-actions :deep(.ant-btn-text:hover) {
+  color: var(--pb-violet) !important;
+}
+
 @media (max-width: 720px) {
   #globalHeader .title-bar {
-    gap: 7px;
+    gap: 8px;
   }
 
   .brand .subtitle,

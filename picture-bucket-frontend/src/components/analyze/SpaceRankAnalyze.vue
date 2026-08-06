@@ -34,9 +34,6 @@ const fetchData = async () => {
   loading.value = true
   // 转换搜索参数
   const res = await getSpaceRankAnalyzeUsingPost({
-    queryAll: props.queryAll,
-    queryPublic: props.queryPublic,
-    spaceId: props.spaceId,
     topN: 10, // 后端默认是 10
   })
   if (res.data.code === 0 && res.data.data) {
@@ -57,9 +54,10 @@ watchEffect(() => {
 // 图表选项
 const options = computed(() => {
   const spaceNames = dataList.value.map((item) => item.spaceName)
-  const usageData = dataList.value.map((item) => (item.totalSize / (1024 * 1024)).toFixed(2)) // 转为 MB
+  const usageData = dataList.value.map((item) => ((item.totalSize ?? 0) / (1024 * 1024)).toFixed(2)) // 转为 MB
 
   return {
+    backgroundColor: 'transparent',
     tooltip: { trigger: 'axis' },
     xAxis: {
       type: 'category',
@@ -75,7 +73,7 @@ const options = computed(() => {
         type: 'bar',
         data: usageData,
         itemStyle: {
-          color: '#5470C6', // 自定义柱状图颜色
+          color: '#2ee6c8', // 主题青色
         },
       },
     ],

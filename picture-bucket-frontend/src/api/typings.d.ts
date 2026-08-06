@@ -192,7 +192,7 @@ declare namespace API {
   }
 
   type DeleteRequest = {
-    id?: number
+    id?: number | string
   }
 
   type GetOutPaintingTaskResponse = {
@@ -654,6 +654,7 @@ declare namespace API {
 
   type User = {
     createTime?: string
+    email?: string
     editTime?: string
     id?: number
     isDelete?: number
@@ -670,11 +671,20 @@ declare namespace API {
   }
 
   type UserAddRequest = {
+    email?: string
     userAccount?: string
     userAvatar?: string
     userName?: string
+    userPassword?: string
     userProfile?: string
     userRole?: string
+  }
+
+  /** 登录用户编辑自己的基础资料（昵称/头像/简介），不含账号、密码、角色 */
+  type UserEditRequest = {
+    userAvatar?: string
+    userName?: string
+    userProfile?: string
   }
 
   /** 登录：邮箱或账号 + 密码 + 邮箱验证码 */
@@ -707,7 +717,9 @@ declare namespace API {
   }
 
   type UserUpdateRequest = {
+    email?: string
     id?: number
+    userAccount?: string
     userAvatar?: string
     userName?: string
     userProfile?: string

@@ -109,32 +109,47 @@ const doMenuClick = ({ key }: { key: string | number }) => {
 }
 
 #globalSider .ant-layout-sider {
-  background: rgba(255, 255, 255, 0.7) !important;
-  border: 1px solid rgba(229, 233, 242, 0.9);
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72) !important;
+  border: 1px solid rgba(232, 234, 243, 0.9);
+  border-radius: 22px;
   margin: 0;
   min-height: calc(100vh - 174px);
-  box-shadow: 0 14px 34px rgba(71, 83, 123, 0.05);
+  box-shadow: 0 16px 40px rgba(93, 102, 160, 0.08);
   overflow: hidden;
+  backdrop-filter: blur(16px);
 }
 
 #globalSider :deep(.ant-menu) {
-  padding: 8px 4px;
+  padding: 10px 6px;
   background: transparent;
+}
+
+#globalSider :deep(.ant-menu-item-group-title) {
+  color: var(--pb-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
 #globalSider :deep(.ant-menu-item) {
   height: 44px;
   margin-inline: 8px;
   width: calc(100% - 16px);
-  border-radius: 12px;
+  border-radius: 13px;
   line-height: 44px;
-  color: #66748d;
+  color: var(--pb-muted);
+  font-size: 13px;
   font-weight: 600;
+  transition: color 0.2s ease, background 0.25s ease, transform 0.2s ease;
+}
+
+#globalSider :deep(.ant-menu-item:hover) {
+  color: var(--pb-ink);
+  transform: translateX(3px);
 }
 
 #globalSider :deep(.ant-menu-item-selected) {
-  color: #5962bc;
-  background: #eef0ff;
+  color: var(--pb-violet);
+  background: linear-gradient(120deg, rgba(108, 92, 231, 0.12), rgba(56, 189, 248, 0.09));
 }
 </style>

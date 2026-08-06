@@ -1,30 +1,25 @@
 <template>
   <div id="spaceManagePage">
-    <a-flex justify="space-between">
-      <h2>空间成员管理</h2>
-      <a-space>
+    <AdminPageHeader title="空间成员管理" subtitle="为当前空间添加成员并分配角色">
+      <template #actions>
         <a-button type="primary" href="/add_space" target="_blank">+ 创建空间</a-button>
-        <a-button type="primary" ghost href="/space_analyze?queryPublic=1" target="_blank"
-          >分析公共图库
-        </a-button>
-        <a-button type="primary" ghost href="/space_analyze?queryAll=1" target="_blank"
-          >分析全部空间
-        </a-button>
-      </a-space>
-    </a-flex>
-    <div style="margin-bottom: 16px" />
+      </template>
+    </AdminPageHeader>
     <!-- 添加成员表单 -->
-    <a-form layout="inline" :model="formData" @finish="handleSubmit">
-      <a-form-item label="用户 id" name="userId">
-        <a-input v-model:value="formData.userId" placeholder="请输入用户 id" allow-clear />
-      </a-form-item>
-      <a-form-item>
-        <a-button type="primary" html-type="submit">添加用户</a-button>
-      </a-form-item>
-    </a-form>
+    <a-card class="admin-panel" :bordered="false">
+      <a-form layout="inline" :model="formData" @finish="handleSubmit">
+        <a-form-item label="用户 id" name="userId">
+          <a-input v-model:value="formData.userId" placeholder="请输入用户 id" allow-clear />
+        </a-form-item>
+        <a-form-item>
+          <a-button type="primary" html-type="submit">添加用户</a-button>
+        </a-form-item>
+      </a-form>
+    </a-card>
     <div style="margin-bottom: 16px" />
     <!-- 表格 -->
-    <a-table :columns="columns" :data-source="dataList">
+    <a-card class="admin-table-card" :bordered="false">
+      <a-table :columns="columns" :data-source="dataList">
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'userInfo'">
           <a-space>
@@ -36,7 +31,7 @@
           <a-select
             v-model:value="record.spaceRole"
             :options="SPACE_ROLE_OPTIONS"
-            @change="(value) => editSpaceRole(value, record)"
+            @change="(value: any) => editSpaceRole(value, record)"
           />
         </template>
         <template v-else-if="column.dataIndex === 'createTime'">
@@ -48,7 +43,8 @@
           </a-space>
         </template>
       </template>
-    </a-table>
+      </a-table>
+    </a-card>
   </div>
 </template>
 <script lang="ts" setup>
@@ -62,6 +58,7 @@ import {
   listSpaceUserUsingPost,
 } from '@/api/spaceUserController.ts'
 import dayjs from 'dayjs'
+import AdminPageHeader from '@/components/AdminPageHeader.vue'
 
 interface Props {
   id: string
@@ -98,7 +95,7 @@ const fetchData = async () => {
     return
   }
   const res = await listSpaceUserUsingPost({
-    spaceId,
+    spaceId: Number(spaceId),
   })
   if (res.data.code === 0 && res.data.data) {
     dataList.value = res.data.data ?? []
@@ -122,7 +119,7 @@ const handleSubmit = async () => {
     return
   }
   const res = await addSpaceUserUsingPost({
-    spaceId,
+    spaceId: Number(spaceId),
     ...formData,
   })
   if (res.data.code === 0) {
@@ -135,7 +132,7 @@ const handleSubmit = async () => {
 }
 
 // 编辑成员角色
-const editSpaceRole = async (value, record) => {
+const editSpaceRole = async (value: string, record: API.SpaceUserVO) => {
   const res = await editSpaceUserUsingPost({
     id: record.id,
     spaceRole: value,
@@ -152,7 +149,7 @@ const doDelete = async (id: string) => {
   if (!id) {
     return
   }
-  const res = await deleteSpaceUserUsingPost({ id })
+  const res = await deleteSpaceUserUsingPost({ id: Number(id) })
   if (res.data.code === 0) {
     message.success('删除成功')
     // 刷新数据

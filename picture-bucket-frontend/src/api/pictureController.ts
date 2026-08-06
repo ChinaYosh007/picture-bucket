@@ -264,7 +264,7 @@ export async function uploadPictureUsingPost(
     data: formData,
     requestType: 'form',
     ...(options || {}),
-  })
+  } as any)
 }
 
 /** uploadPictureByBatch POST /api/picture/upload/batch */

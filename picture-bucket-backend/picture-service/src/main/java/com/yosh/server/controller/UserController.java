@@ -1,11 +1,14 @@
 package com.yosh.server.controller;
 
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.lang.Validator;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yosh.common.constants.UserConstant;
+import com.yosh.common.enums.UserRoleEnum;
 import com.yosh.common.exception.ErrorCode;
 import com.yosh.common.exception.ThrowUtils;
 import com.yosh.common.model.dto.user.UserAddRequest;
+import com.yosh.common.model.dto.user.UserEditRequest;
 import com.yosh.common.model.dto.user.UserLoginRequest;
 import com.yosh.common.model.dto.user.UserQueryRequest;
 import com.yosh.common.model.dto.user.UserRegisterRequest;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * 用户认证与管理员用户管理接口。
@@ -82,11 +86,31 @@ public class UserController {
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Long> addUser(@RequestBody UserAddRequest userAddRequest) {
         ThrowUtils.throwIf(userAddRequest == null, ErrorCode.PARAMS_ERROR);
-        ThrowUtils.throwIf(StrUtil.length(userAddRequest.getUserPassword()) < 8,
+        ThrowUtils.throwIf(StrUtil.hasBlank(userAddRequest.getUserAccount(), userAddRequest.getUserPassword(),
+                        userAddRequest.getEmail()),
+                ErrorCode.PARAMS_ERROR, "账号、密码和邮箱不能为空");
+        ThrowUtils.throwIf(StrUtil.length(userAddRequest.getUserPassword()) < 8
+                        || StrUtil.length(userAddRequest.getUserPassword()) > 64,
                 ErrorCode.PARAMS_ERROR, "密码长度不能少于 8 位");
+        ThrowUtils.throwIf(!Validator.isEmail(userAddRequest.getEmail()),
+                ErrorCode.PARAMS_ERROR, "邮箱格式不正确");
+
+        String userAccount = normalizeUserAccount(userAddRequest.getUserAccount());
+        String email = StrUtil.trim(userAddRequest.getEmail()).toLowerCase(Locale.ROOT);
+        ThrowUtils.throwIf(userService.lambdaQuery().eq(User::getUserAccount, userAccount).exists(),
+                ErrorCode.PARAMS_ERROR, "账号已存在");
+        ThrowUtils.throwIf(userService.lambdaQuery().eq(User::getEmail, email).exists(),
+                ErrorCode.PARAMS_ERROR, "邮箱已存在");
+
+        String userRole = StrUtil.blankToDefault(userAddRequest.getUserRole(), UserConstant.DEFAULT_ROLE);
+        ThrowUtils.throwIf(UserRoleEnum.getEnum(userRole) == null,
+                ErrorCode.PARAMS_ERROR, "用户角色不合法");
 
         User user = User.builder().build();
         BeanUtils.copyProperties(userAddRequest, user);
+        user.setUserAccount(userAccount);
+        user.setEmail(email);
+        user.setUserRole(userRole);
         user.setUserPassword(userService.getEncryptPassword(userAddRequest.getUserPassword()));
         ThrowUtils.throwIf(!userService.save(user), ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(user.getId());
@@ -107,6 +131,22 @@ public class UserController {
         return ResultUtils.success(getUserVO(id));
     }
 
+    /** 普通用户编辑自己的基础资料（昵称/头像/简介），不允许改角色等敏感字段。 */
+    @PostMapping("/edit")
+    public BaseResponse<Boolean> editUser(@RequestBody UserEditRequest userEditRequest,
+                                          HttpServletRequest httpRequest) {
+        ThrowUtils.throwIf(userEditRequest == null, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getLoginUser(httpRequest);
+
+        User user = User.builder().build();
+        user.setId(loginUser.getId());
+        user.setUserName(userEditRequest.getUserName());
+        user.setUserAvatar(userEditRequest.getUserAvatar());
+        user.setUserProfile(userEditRequest.getUserProfile());
+        ThrowUtils.throwIf(!userService.updateById(user), ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
+    }
+
     /** 逻辑删除指定用户，仅管理员可操作。 */
     @PostMapping("/delete")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
@@ -114,6 +154,7 @@ public class UserController {
         ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() == null
                         || deleteRequest.getId() <= 0,
                 ErrorCode.PARAMS_ERROR);
+        getUser(deleteRequest.getId());
         ThrowUtils.throwIf(!userService.removeById(deleteRequest.getId()), ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -125,9 +166,38 @@ public class UserController {
         ThrowUtils.throwIf(userUpdateRequest == null || userUpdateRequest.getId() == null
                         || userUpdateRequest.getId() <= 0,
                 ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(StrUtil.isNotBlank(userUpdateRequest.getEmail())
+                        && !Validator.isEmail(userUpdateRequest.getEmail()),
+                ErrorCode.PARAMS_ERROR, "邮箱格式不正确");
+        ThrowUtils.throwIf(StrUtil.isNotBlank(userUpdateRequest.getUserRole())
+                        && UserRoleEnum.getEnum(userUpdateRequest.getUserRole()) == null,
+                ErrorCode.PARAMS_ERROR, "用户角色不合法");
+        getUser(userUpdateRequest.getId());
+
+        String userAccount = null;
+        if (userUpdateRequest.getUserAccount() != null) {
+            userAccount = normalizeUserAccount(userUpdateRequest.getUserAccount());
+            ThrowUtils.throwIf(userService.lambdaQuery()
+                            .eq(User::getUserAccount, userAccount)
+                            .ne(User::getId, userUpdateRequest.getId())
+                            .exists(),
+                    ErrorCode.PARAMS_ERROR, "账号已存在");
+        }
+
+        String email = null;
+        if (userUpdateRequest.getEmail() != null) {
+            email = StrUtil.trim(userUpdateRequest.getEmail()).toLowerCase(Locale.ROOT);
+            ThrowUtils.throwIf(userService.lambdaQuery()
+                            .eq(User::getEmail, email)
+                            .ne(User::getId, userUpdateRequest.getId())
+                            .exists(),
+                    ErrorCode.PARAMS_ERROR, "邮箱已存在");
+        }
 
         User user = User.builder().build();
         BeanUtils.copyProperties(userUpdateRequest, user);
+        user.setUserAccount(userAccount);
+        user.setEmail(email);
         ThrowUtils.throwIf(!userService.updateById(user), ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -159,5 +229,19 @@ public class UserController {
         User user = userService.getById(id);
         ThrowUtils.throwIf(user == null, ErrorCode.NOT_FOUND_ERROR);
         return user;
+    }
+
+    /**
+     * 账号既用于登录，也用于通过账号发送验证码；统一限制格式避免空白或特殊字符账号。
+     */
+    private String normalizeUserAccount(String userAccount) {
+        String normalizedAccount = StrUtil.trim(userAccount);
+        ThrowUtils.throwIf(StrUtil.isBlank(normalizedAccount)
+                        || normalizedAccount.length() < 3
+                        || normalizedAccount.length() > 64
+                        || !normalizedAccount.matches("[A-Za-z0-9_-]+"),
+                ErrorCode.PARAMS_ERROR,
+                "账号仅支持 3 至 64 位字母、数字、下划线或连字符");
+        return normalizedAccount;
     }
 }

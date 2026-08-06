@@ -70,7 +70,7 @@ const isTeamSpace = computed(() => {
 const cropperRef = ref()
 
 // 缩放比例
-const changeScale = (num) => {
+const changeScale = (num: number) => {
   cropperRef.value?.changeScale(num)
   if (num > 0) {
     editAction(PICTURE_EDIT_ACTION_ENUM.ZOOM_IN)
@@ -113,7 +113,7 @@ const handleUpload = async ({ file }: any) => {
   try {
     const params: API.PictureUploadRequest = props.picture ? { id: props.picture.id } : {}
     params.spaceId = props.spaceId
-    const res = await uploadPictureUsingPost(params, {}, file)
+    const res: any = await uploadPictureUsingPost(params, {}, file)
     if (res.data.code === 0 && res.data.data) {
       message.success('图片上传成功')
       // 将上传成功的图片信息传递给父组件
@@ -122,7 +122,7 @@ const handleUpload = async ({ file }: any) => {
     } else {
       message.error('图片上传失败，' + res.data.message)
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('图片上传失败', error)
     message.error('图片上传失败，' + error.message)
   }

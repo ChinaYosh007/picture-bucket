@@ -8,7 +8,11 @@
         <GlobalSider class="sider" />
         <a-layout-content class="content">
           <div class="content-inner">
-            <router-view />
+            <router-view v-slot="{ Component }">
+              <transition name="page-fade" mode="out-in">
+                <component :is="Component" />
+              </transition>
+            </router-view>
           </div>
         </a-layout-content>
       </a-layout>
@@ -37,12 +41,12 @@ import GlobalSider from '@/components/GlobalSider.vue'
   position: sticky;
   top: 0;
   z-index: 100;
-  height: 72px;
+  height: 68px;
   padding-inline: 28px;
-  line-height: 72px;
-  background: rgba(255, 255, 255, 0.76);
-  border-bottom: 1px solid rgba(229, 233, 242, 0.88);
-  backdrop-filter: blur(18px);
+  line-height: 68px;
+  background: rgba(255, 255, 255, 0.68);
+  border-bottom: 1px solid rgba(232, 234, 243, 0.85);
+  backdrop-filter: blur(20px) saturate(150%);
 }
 
 .sider {
@@ -56,8 +60,8 @@ import GlobalSider from '@/components/GlobalSider.vue'
 }
 
 .content {
-  min-height: calc(100vh - 72px - 54px);
-  padding: 30px 32px 54px;
+  min-height: calc(100vh - 68px - 56px);
+  padding: 32px 32px 56px;
   background: transparent;
 }
 
@@ -66,30 +70,51 @@ import GlobalSider from '@/components/GlobalSider.vue'
   margin: 0 auto;
 }
 
+/* 页面切换 —— 轻盈的淡入上浮 */
+.page-fade-enter-active {
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.page-fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+}
+
 .footer {
   padding: 16px 24px 20px;
-  color: #9aa6ba;
+  color: var(--pb-faint);
   font-size: 12px;
   text-align: center;
   background: transparent;
 }
 
 .footer-brand {
-  color: #6d74cf;
   font-weight: 800;
   letter-spacing: 0.02em;
+  background: var(--pb-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .footer-sep {
   margin: 0 9px;
-  color: #c1cad9;
+  color: #d4d8e8;
 }
 
 @media (max-width: 768px) {
   .header {
-    height: 64px;
+    height: 60px;
     padding-inline: 14px;
-    line-height: 64px;
+    line-height: 60px;
   }
 
   .content {

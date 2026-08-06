@@ -49,4 +49,13 @@ public interface UserService extends IService<User> {
 
     /** 实体转登录视图。 */
     LoginUserVO getLoginUserVO(User user);
+    /**
+     * 是否为管理员
+     *
+     * @param user
+     * @return
+     */
+    boolean isAdmin(LoginUserVO user);
+
+
 }
