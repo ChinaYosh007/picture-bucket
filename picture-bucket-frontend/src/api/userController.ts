@@ -168,3 +168,18 @@ export async function updateUserUsingPost(
     ...(options || {}),
   })
 }
+
+/** editUser POST /api/user/edit */
+export async function editUserUsingPost(
+  body: API.UserEditRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean_>('/api/user/edit', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}

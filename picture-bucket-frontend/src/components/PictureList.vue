@@ -83,7 +83,7 @@ const doClickPicture = (picture: API.PictureVO) => {
 }
 
 // 搜索
-const doSearch = (picture, e) => {
+const doSearch = (picture: API.PictureVO, e: Event) => {
   // 阻止冒泡
   e.stopPropagation()
   // 打开新的页面
@@ -91,7 +91,7 @@ const doSearch = (picture, e) => {
 }
 
 // 编辑
-const doEdit = (picture, e) => {
+const doEdit = (picture: API.PictureVO, e: Event) => {
   // 阻止冒泡
   e.stopPropagation()
   // 跳转时一定要携带 spaceId
@@ -105,7 +105,7 @@ const doEdit = (picture, e) => {
 }
 
 // 删除数据
-const doDelete = async (picture, e) => {
+const doDelete = async (picture: API.PictureVO, e: Event) => {
   // 阻止冒泡
   e.stopPropagation()
   const id = picture.id
@@ -126,7 +126,7 @@ const shareModalRef = ref()
 // 分享链接
 const shareLink = ref<string>()
 // 分享
-const doShare = (picture, e) => {
+const doShare = (picture: API.PictureVO, e: Event) => {
   // 阻止冒泡
   e.stopPropagation()
   shareLink.value = `${window.location.protocol}//${window.location.host}/picture/${picture.id}`
@@ -138,22 +138,44 @@ const doShare = (picture, e) => {
 
 <style scoped>
 .gallery-card {
-  border-color: #e5e9f2;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 9px 22px rgba(71, 83, 123, 0.05);
+  border-color: rgba(232, 234, 243, 0.95);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 26px rgba(93, 102, 160, 0.07);
 }
 
 .gallery-card:hover {
-  border-color: #d5daf8;
-  box-shadow: 0 16px 28px rgba(71, 83, 123, 0.12);
-  transform: translateY(-3px);
+  border-color: rgba(108, 92, 231, 0.35);
+  box-shadow: 0 22px 44px rgba(93, 102, 160, 0.16);
+  transform: translateY(-5px);
 }
 
 .gallery-cover {
+  position: relative;
   height: 190px;
   overflow: hidden;
-  background: #eff2f8;
+  background: linear-gradient(140deg, #eef0fa, #e6f4fb);
+}
+
+/* 悬停时顶部扫过的高光 */
+.gallery-cover::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.45) 48%,
+    transparent 62%
+  );
+  opacity: 0;
+  transform: translateX(-60%);
+  transition: opacity 0.35s ease, transform 0.6s ease;
+  content: '';
+}
+
+.gallery-card:hover .gallery-cover::after {
+  opacity: 1;
+  transform: translateX(60%);
 }
 
 .gallery-cover img {
@@ -161,11 +183,11 @@ const doShare = (picture, e) => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.35s ease;
+  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .gallery-card:hover .gallery-cover img {
-  transform: scale(1.04);
+  transform: scale(1.07);
 }
 
 .gallery-card :deep(.ant-card-body) {
@@ -173,11 +195,31 @@ const doShare = (picture, e) => {
 }
 
 .gallery-card :deep(.ant-card-meta-title) {
-  color: #35405a;
+  color: var(--pb-ink);
+  font-size: 14px;
   font-weight: 700;
 }
 
 .gallery-card :deep(.ant-card-meta-description) {
   margin-top: 10px;
+}
+
+.gallery-card :deep(.ant-card-actions) {
+  background: rgba(248, 249, 253, 0.8);
+  border-top-color: var(--pb-line);
+}
+
+.gallery-card :deep(.ant-card-actions > li) {
+  color: var(--pb-muted);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.gallery-card :deep(.ant-card-actions > li:hover) {
+  color: var(--pb-violet);
+  transform: translateY(-2px);
+}
+
+.gallery-card :deep(.ant-card-actions > li + li) {
+  border-inline-start-color: var(--pb-line);
 }
 </style>

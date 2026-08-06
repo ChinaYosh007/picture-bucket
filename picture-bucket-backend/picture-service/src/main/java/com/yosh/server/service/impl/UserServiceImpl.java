@@ -298,6 +298,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .build();
     }
 
+    @Override
+    public boolean isAdmin(LoginUserVO user) {
+        return UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
+    }
+
     /**
      * 解析收件邮箱：入参是邮箱则规范化；否则按账号查用户邮箱。
      */

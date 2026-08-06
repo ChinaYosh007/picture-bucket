@@ -6,6 +6,9 @@ server:
       cookie:
         max-age: 7d
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
   config:
     import: optional:file:./.env[.properties],optional:file:./picture-service/.env[.properties]
   application:
@@ -63,3 +66,13 @@ springdoc:
     - group: picture-service
       paths-to-match: /**
       packages-to-scan: com.yosh.server.controller
+
+# 对象存储配置（需要从腾讯云获取）
+cos:
+  client:
+    host: ${COS_HOST}
+    secretId: ${COS_SECRET_ID}
+    secretKey: ${COS_SECRET_KEY}
+    region: ${COS_REGION}
+    bucket: ${COS_BUCKET}
+

@@ -48,13 +48,13 @@ const timeDimensionOptions = [
   },
 ]
 // 用户选项
-const userId = ref<string>()
+const userId = ref<number>()
 const doSearch = (value: string) => {
-  userId.value = value
+  userId.value = value ? Number(value) : undefined
 }
 
 // 图表数据
-const dataList = ref<API.SpaceCategoryAnalyzeResponse>([])
+const dataList = ref<API.SpaceUserAnalyzeResponse[]>([])
 // 加载状态
 const loading = ref(true)
 
@@ -90,6 +90,7 @@ const options = computed(() => {
   const counts = dataList.value.map((item) => item.count) // 上传数量
 
   return {
+    backgroundColor: 'transparent',
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: periods, name: '时间区间' },
     yAxis: { type: 'value', name: '上传数量' },

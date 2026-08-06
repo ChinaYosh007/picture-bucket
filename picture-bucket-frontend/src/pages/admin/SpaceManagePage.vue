@@ -1,56 +1,57 @@
 <template>
   <div id="spaceManagePage">
-    <a-flex justify="space-between">
-      <h2>空间管理</h2>
-      <a-space>
+    <AdminPageHeader title="空间管理" subtitle="管理全部空间及其容量、级别与归属">
+      <template #actions>
         <a-button type="primary" href="/add_space" target="_blank">+ 创建空间</a-button>
-        <a-button type="primary" ghost href="/space_analyze?queryPublic=1" target="_blank"
-          >分析公共图库</a-button
-        >
-        <a-button type="primary" ghost href="/space_analyze?queryAll=1" target="_blank"
-          >分析全部空间</a-button
-        >
-      </a-space>
-    </a-flex>
-    <div style="margin-bottom: 16px" />
+        <a-button type="primary" ghost href="/space_analyze?queryPublic=1" target="_blank">
+          分析公共图库
+        </a-button>
+        <a-button type="primary" ghost href="/space_analyze?queryAll=1" target="_blank">
+          分析全部空间
+        </a-button>
+      </template>
+    </AdminPageHeader>
     <!-- 搜索表单 -->
-    <a-form layout="inline" :model="searchParams" @finish="doSearch">
-      <a-form-item label="空间名称">
-        <a-input v-model:value="searchParams.spaceName" placeholder="请输入空间名称" allow-clear />
-      </a-form-item>
-      <a-form-item name="spaceLevel" label="空间级别">
-        <a-select
-          v-model:value="searchParams.spaceLevel"
-          style="min-width: 180px"
-          placeholder="请选择空间级别"
-          :options="SPACE_LEVEL_OPTIONS"
-          allow-clear
-        />
-      </a-form-item>
-      <a-form-item label="空间类别" name="spaceType">
-        <a-select
-          v-model:value="searchParams.spaceType"
-          :options="SPACE_TYPE_OPTIONS"
-          placeholder="请输入空间类别"
-          style="min-width: 180px"
-          allow-clear
-        />
-      </a-form-item>
-      <a-form-item label="用户 id">
-        <a-input v-model:value="searchParams.userId" placeholder="请输入用户 id" allow-clear />
-      </a-form-item>
-      <a-form-item>
-        <a-button type="primary" html-type="submit">搜索</a-button>
-      </a-form-item>
-    </a-form>
+    <a-card class="admin-panel" :bordered="false">
+      <a-form layout="inline" :model="searchParams" @finish="doSearch">
+        <a-form-item label="空间名称">
+          <a-input v-model:value="searchParams.spaceName" placeholder="请输入空间名称" allow-clear />
+        </a-form-item>
+        <a-form-item name="spaceLevel" label="空间级别">
+          <a-select
+            v-model:value="searchParams.spaceLevel"
+            style="min-width: 180px"
+            placeholder="请选择空间级别"
+            :options="SPACE_LEVEL_OPTIONS"
+            allow-clear
+          />
+        </a-form-item>
+        <a-form-item label="空间类别" name="spaceType">
+          <a-select
+            v-model:value="searchParams.spaceType"
+            :options="SPACE_TYPE_OPTIONS"
+            placeholder="请输入空间类别"
+            style="min-width: 180px"
+            allow-clear
+          />
+        </a-form-item>
+        <a-form-item label="用户 id">
+          <a-input v-model:value="searchParams.userId" placeholder="请输入用户 id" allow-clear />
+        </a-form-item>
+        <a-form-item>
+          <a-button type="primary" html-type="submit">搜索</a-button>
+        </a-form-item>
+      </a-form>
+    </a-card>
     <div style="margin-bottom: 16px" />
     <!-- 表格 -->
-    <a-table
-      :columns="columns"
-      :data-source="dataList"
-      :pagination="pagination"
-      @change="doTableChange"
-    >
+    <a-card class="admin-table-card" :bordered="false">
+      <a-table
+        :columns="columns"
+        :data-source="dataList"
+        :pagination="pagination"
+        @change="doTableChange"
+      >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'spaceLevel'">
           <div>{{ SPACE_LEVEL_MAP[record.spaceLevel] }}</div>
@@ -81,7 +82,8 @@
           </a-space>
         </template>
       </template>
-    </a-table>
+      </a-table>
+    </a-card>
   </div>
 </template>
 <script lang="ts" setup>
@@ -96,6 +98,7 @@ import {
   SPACE_TYPE_OPTIONS,
 } from '../../constants/space.ts'
 import { formatSize } from '../../utils'
+import AdminPageHeader from '@/components/AdminPageHeader.vue'
 
 const columns = [
   {
@@ -175,7 +178,7 @@ const pagination = computed(() => {
     pageSize: searchParams.pageSize,
     total: total.value,
     showSizeChanger: true,
-    showTotal: (total) => `共 ${total} 条`,
+    showTotal: (total: number) => `共 ${total} 条`,
   }
 })
 
@@ -198,7 +201,7 @@ const doDelete = async (id: string) => {
   if (!id) {
     return
   }
-  const res = await deleteSpaceUsingPost({ id })
+  const res = await deleteSpaceUsingPost({ id: Number(id) })
   if (res.data.code === 0) {
     message.success('删除成功')
     // 刷新数据

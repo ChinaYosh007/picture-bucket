@@ -107,7 +107,8 @@ const pictureForm = reactive<API.PictureEditRequest>({})
 const uploadType = ref<'file' | 'url'>('file')
 // 空间 id
 const spaceId = computed(() => {
-  return route.query?.spaceId
+  const raw = route.query?.spaceId
+  return raw ? Number(raw) : undefined
 })
 
 /**
@@ -125,7 +126,7 @@ const onSuccess = (newPicture: API.PictureVO) => {
  */
 const handleSubmit = async (values: any) => {
   console.log(values)
-  const pictureId = picture.value.id
+  const pictureId = picture.value?.id
   if (!pictureId) {
     return
   }
@@ -146,8 +147,8 @@ const handleSubmit = async (values: any) => {
   }
 }
 
-const categoryOptions = ref<string[]>([])
-const tagOptions = ref<string[]>([])
+const categoryOptions = ref<{ value: string; label: string }[]>([])
+const tagOptions = ref<{ value: string; label: string }[]>([])
 
 /**
  * 获取标签和分类选项
@@ -183,7 +184,7 @@ const getOldPicture = async () => {
   const id = route.query?.id
   if (id) {
     const res = await getPictureVoByIdUsingGet({
-      id,
+      id: Number(id),
     })
     if (res.data.code === 0 && res.data.data) {
       const data = res.data.data

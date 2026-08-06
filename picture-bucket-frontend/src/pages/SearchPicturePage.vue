@@ -50,7 +50,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 const pictureId = computed(() => {
-  return route.query?.pictureId
+  return Number(route.query?.pictureId)
 })
 const picture = ref<API.PictureVO>({})
 

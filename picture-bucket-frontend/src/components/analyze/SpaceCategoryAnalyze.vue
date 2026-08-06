@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // 图表数据
-const dataList = ref<API.SpaceCategoryAnalyzeResponse>([])
+const dataList = ref<API.SpaceCategoryAnalyzeResponse[]>([])
 // 加载状态
 const loading = ref(true)
 
@@ -57,9 +57,10 @@ watchEffect(() => {
 const options = computed(() => {
   const categories = dataList.value.map((item) => item.category)
   const countData = dataList.value.map((item) => item.count)
-  const sizeData = dataList.value.map((item) => (item.totalSize / (1024 * 1024)).toFixed(2)) // 转为 MB
+  const sizeData = dataList.value.map((item) => ((item.totalSize ?? 0) / (1024 * 1024)).toFixed(2)) // 转为 MB
 
   return {
+    backgroundColor: 'transparent',
     tooltip: { trigger: 'axis' },
     legend: { data: ['图片数量', '图片总大小'], top: 'bottom' },
     xAxis: { type: 'category', data: categories },
