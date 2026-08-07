@@ -188,7 +188,7 @@ declare namespace API {
 
   type CreatePictureOutPaintingTaskRequest = {
     parameters?: Parameters
-    pictureId?: number
+    pictureId?: number | string
   }
 
   type DeleteRequest = {
@@ -202,7 +202,7 @@ declare namespace API {
 
   type getPictureByIdUsingGETParams = {
     /** id */
-    id?: number
+    id?: number | string
   }
 
   type getPictureOutPaintingTaskUsingGETParams = {
@@ -212,7 +212,7 @@ declare namespace API {
 
   type getPictureVOByIdUsingGETParams = {
     /** id */
-    id?: number
+    id?: number | string
   }
 
   type getSpaceByIdUsingGETParams = {
@@ -330,7 +330,7 @@ declare namespace API {
     category?: string
     createTime?: string
     editTime?: string
-    id?: number
+    id?: number | string
     introduction?: string
     isDelete?: number
     name?: string
@@ -343,26 +343,26 @@ declare namespace API {
     reviewMessage?: string
     reviewStatus?: number
     reviewTime?: string
-    reviewerId?: number
-    spaceId?: number
+    reviewerId?: number | string
+    spaceId?: number | string
     tags?: string
     thumbnailUrl?: string
     updateTime?: string
     url?: string
-    userId?: number
+    userId?: number | string
   }
 
   type PictureEditByBatchRequest = {
     category?: string
     nameRule?: string
-    pictureIdList?: number[]
-    spaceId?: number
+    pictureIdList?: Array<number | string>
+    spaceId?: number | string
     tags?: string[]
   }
 
   type PictureEditRequest = {
     category?: string
-    id?: number
+    id?: number | string
     introduction?: string
     name?: string
     tags?: string[]
@@ -372,7 +372,7 @@ declare namespace API {
     category?: string
     current?: number
     endEditTime?: string
-    id?: number
+    id?: number | string
     introduction?: string
     name?: string
     nullSpaceId?: boolean
@@ -385,18 +385,18 @@ declare namespace API {
     reviewMessage?: string
     reviewStatus?: number
     reviewTime?: string
-    reviewerId?: number
+    reviewerId?: number | string
     searchText?: string
     sortField?: string
     sortOrder?: string
-    spaceId?: number
+    spaceId?: number | string
     startEditTime?: string
     tags?: string[]
-    userId?: number
+    userId?: number | string
   }
 
   type PictureReviewRequest = {
-    id?: number
+    id?: number | string
     reviewMessage?: string
     reviewStatus?: number
   }
@@ -408,7 +408,7 @@ declare namespace API {
 
   type PictureUpdateRequest = {
     category?: string
-    id?: number
+    id?: number | string
     introduction?: string
     name?: string
     tags?: string[]
@@ -422,16 +422,16 @@ declare namespace API {
 
   type PictureUploadRequest = {
     fileUrl?: string
-    id?: number
+    id?: number | string
     picName?: string
-    spaceId?: number
+    spaceId?: number | string
   }
 
   type PictureVO = {
     category?: string
     createTime?: string
     editTime?: string
-    id?: number
+    id?: number | string
     introduction?: string
     name?: string
     permissionList?: string[]
@@ -441,22 +441,22 @@ declare namespace API {
     picScale?: number
     picSize?: number
     picWidth?: number
-    spaceId?: number
+    spaceId?: number | string
     tags?: string[]
     thumbnailUrl?: string
     updateTime?: string
     url?: string
     user?: UserVO
-    userId?: number
+    userId?: number | string
   }
 
   type SearchPictureByColorRequest = {
     picColor?: string
-    spaceId?: number
+    spaceId?: number | string
   }
 
   type SearchPictureByPictureRequest = {
-    pictureId?: number
+    pictureId?: number | string
   }
 
   type Space = {
@@ -647,9 +647,9 @@ declare namespace API {
 
   type uploadPictureUsingPOSTParams = {
     fileUrl?: string
-    id?: number
+    id?: number | string
     picName?: string
-    spaceId?: number
+    spaceId?: number | string
   }
 
   type User = {
@@ -680,8 +680,11 @@ declare namespace API {
     userRole?: string
   }
 
-  /** 登录用户编辑自己的基础资料（昵称/头像/简介），不含账号、密码、角色 */
+  /** 登录用户编辑自己的资料；变更绑定邮箱时需要提供新邮箱验证码。 */
   type UserEditRequest = {
+    email?: string
+    emailCode?: string
+    userAccount?: string
     userAvatar?: string
     userName?: string
     userProfile?: string
@@ -693,6 +696,13 @@ declare namespace API {
     account?: string
     userPassword?: string
     emailCode?: string
+  }
+
+  /** 登录用户修改自己的密码。 */
+  type UserPasswordUpdateRequest = {
+    confirmPassword?: string
+    currentPassword?: string
+    newPassword?: string
   }
 
   type UserQueryRequest = {

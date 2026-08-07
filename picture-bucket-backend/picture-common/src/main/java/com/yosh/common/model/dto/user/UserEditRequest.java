@@ -11,6 +11,21 @@ import java.io.Serializable;
 public class UserEditRequest implements Serializable {
 
     /**
+     * 登录账号
+     */
+    private String userAccount;
+
+    /**
+     * 绑定邮箱
+     */
+    private String email;
+
+    /**
+     * 新邮箱验证码，仅在变更绑定邮箱时需要
+     */
+    private String emailCode;
+
+    /**
      * 用户昵称
      */
     private String userName;

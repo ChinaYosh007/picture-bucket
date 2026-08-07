@@ -62,6 +62,29 @@ Returns `BaseResponse<UserVO>`:
 
 Email and password are not returned by this endpoint.
 
+## Edit own profile
+
+`POST /user/edit`
+
+Requires an authenticated session. `userAccount`, `email`, `userName`, `userAvatar`, and `userProfile` may be edited. When the email changes, `emailCode` must be a valid verification code sent to the new email address. Roles, membership fields, and other system-owned fields cannot be changed through this endpoint.
+
+Request body:
+
+```json
+{
+  "userAccount": "demo_user",
+  "email": "demo@example.com",
+  "emailCode": "123456",
+  "userName": "Demo",
+  "userAvatar": "https://example.com/avatar.png",
+  "userProfile": "profile text"
+}
+```
+
+`emailCode` is required only when changing the email. A changed account can be used for later logins immediately.
+
+Response: `BaseResponse<boolean>`.
+
 ## Update user (admin)
 
 `POST /user/update`
@@ -81,6 +104,24 @@ Request body:
 ```
 
 Only supplied fields are updated. `email` must be valid; `userRole`, if supplied, must be `user` or `admin`. A changed `userAccount` takes effect immediately for later logins.
+
+Response: `BaseResponse<boolean>`.
+
+## Update own password
+
+`POST /user/password/update`
+
+Requires an authenticated session. The current password must be supplied and the new password must be 8 to 64 characters; the new password cannot equal the current password. On success, the current session ID is rotated.
+
+Request body:
+
+```json
+{
+  "currentPassword": "current-password",
+  "newPassword": "new-password-at-least-8-chars",
+  "confirmPassword": "new-password-at-least-8-chars"
+}
+```
 
 Response: `BaseResponse<boolean>`.
 

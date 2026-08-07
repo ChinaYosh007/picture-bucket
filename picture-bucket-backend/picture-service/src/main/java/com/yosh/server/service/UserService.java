@@ -3,6 +3,7 @@ package com.yosh.server.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.spring.service.IService;
 import com.yosh.common.model.dto.user.UserLoginRequest;
+import com.yosh.common.model.dto.user.UserPasswordUpdateRequest;
 import com.yosh.common.model.dto.user.UserQueryRequest;
 import com.yosh.common.model.dto.user.UserRegisterRequest;
 import com.yosh.common.model.entry.User;
@@ -41,11 +42,16 @@ public interface UserService extends IService<User> {
     /** 加密用户密码。 */
     String getEncryptPassword(String userPassword);
 
+    boolean updateUserPassword(long userId, UserPasswordUpdateRequest request);
+
     /**
      * 发送邮箱验证码。
      * {@code accountOrEmail} 可为邮箱，或已注册用户的账号（按账号查邮箱后发送）。
      */
     void sendEmailCode(String accountOrEmail);
+
+    /** Verify and consume an email verification code. */
+    void verifyEmailCode(String email, String emailCode);
 
     /** 实体转登录视图。 */
     LoginUserVO getLoginUserVO(User user);

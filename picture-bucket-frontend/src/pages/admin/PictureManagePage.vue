@@ -8,7 +8,7 @@
         </a-button>
       </template>
     </AdminPageHeader>
-    <!-- 搜索表单 -->
+
     <a-card class="admin-panel" :bordered="false">
       <a-form layout="inline" :model="searchParams" @finish="doSearch">
         <a-form-item label="关键词">
@@ -44,8 +44,7 @@
         </a-form-item>
       </a-form>
     </a-card>
-    <div style="margin-bottom: 16px" />
-    <!-- 表格 -->
+
     <a-card class="admin-table-card" :bordered="false">
       <a-table
         class="compact-admin-table"
@@ -53,70 +52,143 @@
         :data-source="dataList"
         :pagination="pagination"
         :row-key="(record: API.Picture) => record.id ?? ''"
-        :scroll="{ x: 1500 }"
+        :scroll="{ x: 1050 }"
         size="small"
         @change="doTableChange"
       >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.dataIndex === 'url'">
-          <a-image class="picture-thumb" :src="record.url" :width="64" :height="64" />
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'url'">
+            <a-image class="picture-thumb" :src="record.url" :width="64" :height="64" />
+          </template>
+          <template v-else-if="column.key === 'asset'">
+            <div class="asset-cell">
+              <a-typography-text
+                class="asset-name"
+                :ellipsis="{ tooltip: record.name || '未命名图片' }"
+              >
+                {{ record.name || '未命名图片' }}
+              </a-typography-text>
+              <div class="asset-tags">
+                <a-tag v-if="record.category" color="blue">{{ record.category }}</a-tag>
+                <a-tag v-for="tag in getTags(record.tags).slice(0, 2)" :key="tag">
+                  {{ tag }}
+                </a-tag>
+                <a-tag v-if="getTags(record.tags).length > 2">
+                  +{{ getTags(record.tags).length - 2 }}
+                </a-tag>
+              </div>
+            </div>
+          </template>
+          <template v-else-if="column.key === 'owner'">
+            <div class="owner-cell">
+              <span>用户 {{ record.userId || '—' }}</span>
+              <span>{{ record.spaceId ? `空间 ${record.spaceId}` : '公共图库' }}</span>
+            </div>
+          </template>
+          <template v-else-if="column.key === 'review'">
+            <div class="review-cell">
+              <a-badge
+                :status="getReviewBadgeStatus(record.reviewStatus)"
+                :text="getReviewStatusText(record.reviewStatus)"
+              />
+              <span v-if="record.reviewMessage" :title="record.reviewMessage">
+                {{ record.reviewMessage }}
+              </span>
+            </div>
+          </template>
+          <template v-else-if="column.dataIndex === 'createTime'">
+            {{ formatDate(record.createTime) }}
+          </template>
+          <template v-else-if="column.key === 'action'">
+            <a-space class="action-cell" wrap>
+              <a-button type="link" size="small" @click="openDetail(record)">详细</a-button>
+              <a-button
+                v-if="record.reviewStatus !== PIC_REVIEW_STATUS_ENUM.PASS"
+                type="link"
+                size="small"
+                @click="handleReview(record, PIC_REVIEW_STATUS_ENUM.PASS)"
+              >
+                通过
+              </a-button>
+              <a-button
+                v-if="record.reviewStatus !== PIC_REVIEW_STATUS_ENUM.REJECT"
+                type="link"
+                size="small"
+                danger
+                @click="handleReview(record, PIC_REVIEW_STATUS_ENUM.REJECT)"
+              >
+                拒绝
+              </a-button>
+              <a-button type="link" size="small" :href="`/add_picture?id=${record.id}`" target="_blank">
+                编辑
+              </a-button>
+              <a-button type="link" size="small" danger @click="doDelete(record.id)">删除</a-button>
+            </a-space>
+          </template>
         </template>
-        <template v-if="column.dataIndex === 'tags'">
-          <a-space wrap>
-            <a-tag v-for="tag in JSON.parse(record.tags || '[]')" :key="tag">
-              {{ tag }}
-            </a-tag>
-          </a-space>
-        </template>
-        <template v-if="column.dataIndex === 'picInfo'">
-          <div>格式：{{ record.picFormat }}</div>
-          <div>宽度：{{ record.picWidth }}</div>
-          <div>高度：{{ record.picHeight }}</div>
-          <div>宽高比：{{ record.picScale }}</div>
-          <div>大小：{{ (record.picSize / 1024).toFixed(2) }}KB</div>
-        </template>
-        <template v-if="column.dataIndex === 'reviewMessage'">
-          <div>审核状态：{{ PIC_REVIEW_STATUS_MAP[Number(record.reviewStatus)] }}</div>
-          <div>审核信息：{{ record.reviewMessage }}</div>
-          <div>审核人：{{ record.reviewerId }}</div>
-          <div v-if="record.reviewTime">
-            审核时间：{{ dayjs(record.reviewTime).format('YYYY-MM-DD HH:mm:ss') }}
-          </div>
-        </template>
-        <template v-if="column.dataIndex === 'createTime'">
-          {{ dayjs(record.createTime).format('YYYY-MM-DD HH:mm:ss') }}
-        </template>
-        <template v-if="column.dataIndex === 'editTime'">
-          {{ dayjs(record.editTime).format('YYYY-MM-DD HH:mm:ss') }}
-        </template>
-        <template v-else-if="column.key === 'action'">
-          <a-space wrap>
-            <a-button
-              v-if="record.reviewStatus !== PIC_REVIEW_STATUS_ENUM.PASS"
-              type="link"
-              @click="handleReview(record, PIC_REVIEW_STATUS_ENUM.PASS)"
-            >
-              通过
-            </a-button>
-            <a-button
-              v-if="record.reviewStatus !== PIC_REVIEW_STATUS_ENUM.REJECT"
-              type="link"
-              danger
-              @click="handleReview(record, PIC_REVIEW_STATUS_ENUM.REJECT)"
-            >
-              拒绝
-            </a-button>
-            <a-button type="link" :href="`/add_picture?id=${record.id}`" target="_blank">
-              编辑
-            </a-button>
-            <a-button danger @click="doDelete(record.id)">删除</a-button>
-          </a-space>
-        </template>
-      </template>
       </a-table>
     </a-card>
+
+    <a-drawer v-model:open="detailDrawerOpen" title="图片详细信息" width="520">
+      <template #extra>
+        <a-button v-if="currentPicture.id" type="link" :href="`/picture/${currentPicture.id}`" target="_blank">
+          打开详情页
+        </a-button>
+      </template>
+      <div class="drawer-preview">
+        <a-image :src="currentPicture.url" :alt="currentPicture.name || '图片预览'" />
+      </div>
+      <a-descriptions :column="1" bordered size="small">
+        <a-descriptions-item label="图片 ID">
+          <a-typography-text copyable>{{ currentPicture.id || '—' }}</a-typography-text>
+        </a-descriptions-item>
+        <a-descriptions-item label="名称">{{ currentPicture.name || '未命名图片' }}</a-descriptions-item>
+        <a-descriptions-item label="简介">{{ currentPicture.introduction || '—' }}</a-descriptions-item>
+        <a-descriptions-item label="分类">{{ currentPicture.category || '默认' }}</a-descriptions-item>
+        <a-descriptions-item label="标签">
+          <a-space wrap>
+            <a-tag v-for="tag in getTags(currentPicture.tags)" :key="tag">{{ tag }}</a-tag>
+            <span v-if="getTags(currentPicture.tags).length === 0">—</span>
+          </a-space>
+        </a-descriptions-item>
+        <a-descriptions-item label="图片信息">
+          {{ currentPicture.picFormat || '—' }} · {{ currentPicture.picWidth || '—' }} ×
+          {{ currentPicture.picHeight || '—' }} · {{ formatSize(currentPicture.picSize) }}
+        </a-descriptions-item>
+        <a-descriptions-item label="宽高比">{{ currentPicture.picScale || '—' }}</a-descriptions-item>
+        <a-descriptions-item label="主色调">
+          <a-space>
+            <span>{{ currentPicture.picColor || '—' }}</span>
+            <span
+              v-if="currentPicture.picColor"
+              class="color-dot"
+              :style="{ backgroundColor: toHexColor(currentPicture.picColor) }"
+            />
+          </a-space>
+        </a-descriptions-item>
+        <a-descriptions-item label="归属">
+          用户 {{ currentPicture.userId || '—' }} /
+          {{ currentPicture.spaceId ? `空间 ${currentPicture.spaceId}` : '公共图库' }}
+        </a-descriptions-item>
+        <a-descriptions-item label="审核">
+          {{ getReviewStatusText(currentPicture.reviewStatus) }}
+          {{ currentPicture.reviewMessage ? `：${currentPicture.reviewMessage}` : '' }}
+        </a-descriptions-item>
+        <a-descriptions-item label="审核信息">
+          审核人 {{ currentPicture.reviewerId || '—' }} / {{ formatDate(currentPicture.reviewTime) }}
+        </a-descriptions-item>
+        <a-descriptions-item label="创建时间">{{ formatDate(currentPicture.createTime) }}</a-descriptions-item>
+        <a-descriptions-item label="编辑时间">{{ formatDate(currentPicture.editTime) }}</a-descriptions-item>
+        <a-descriptions-item label="原始地址">
+          <a-typography-paragraph class="url-value" copyable>
+            {{ currentPicture.url || '—' }}
+          </a-typography-paragraph>
+        </a-descriptions-item>
+      </a-descriptions>
+    </a-drawer>
   </div>
 </template>
+
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
@@ -132,84 +204,47 @@ import {
 } from '../../constants/picture.ts'
 import dayjs from 'dayjs'
 import AdminPageHeader from '@/components/AdminPageHeader.vue'
+import { formatSize, toHexColor } from '@/utils'
 
 const columns = [
-  {
-    title: 'id',
-    dataIndex: 'id',
-    width: 130,
-    ellipsis: true,
-  },
   {
     title: '图片',
     dataIndex: 'url',
     width: 88,
   },
   {
-    title: '名称',
-    dataIndex: 'name',
-    width: 128,
-    ellipsis: true,
+    title: '图片名称',
+    key: 'asset',
+    width: 240,
   },
   {
-    title: '简介',
-    dataIndex: 'introduction',
-    width: 160,
-    ellipsis: true,
+    title: '归属',
+    key: 'owner',
+    width: 168,
   },
   {
-    title: '类型',
-    dataIndex: 'category',
-    width: 90,
-  },
-  {
-    title: '标签',
-    dataIndex: 'tags',
-    width: 130,
-  },
-  {
-    title: '图片信息',
-    dataIndex: 'picInfo',
-    width: 126,
-  },
-  {
-    title: '用户 id',
-    dataIndex: 'userId',
-    width: 120,
-  },
-  {
-    title: '空间 id',
-    dataIndex: 'spaceId',
-    width: 112,
-  },
-  {
-    title: '审核信息',
-    dataIndex: 'reviewMessage',
-    width: 160,
+    title: '审核状态',
+    key: 'review',
+    width: 190,
   },
   {
     title: '创建时间',
     dataIndex: 'createTime',
-    width: 152,
-  },
-  {
-    title: '编辑时间',
-    dataIndex: 'editTime',
-    width: 152,
+    width: 154,
   },
   {
     title: '操作',
     key: 'action',
-    width: 116,
+    width: 210,
     fixed: 'right',
   },
 ]
 
-// 定义数据
 const dataList = ref<API.Picture[]>([])
 const total = ref(0)
+const detailDrawerOpen = ref(false)
+const currentPicture = ref<API.Picture>({})
 
-// 搜索条件
 const searchParams = reactive<API.PictureQueryRequest>({
   current: 1,
   pageSize: 10,
@@ -217,7 +252,6 @@ const searchParams = reactive<API.PictureQueryRequest>({
   sortOrder: 'descend',
 })
 
-// 获取数据
 const fetchData = async () => {
   const res = await listPictureByPageUsingPost({
     ...searchParams,
@@ -231,12 +265,10 @@ const fetchData = async () => {
   }
 }
 
-// 页面加载时获取数据，请求一次
 onMounted(() => {
   fetchData()
 })
 
-// 分页参数
 const pagination = computed(() => {
   return {
     current: searchParams.current,
@@ -247,36 +279,62 @@ const pagination = computed(() => {
   }
 })
 
-// 表格变化之后，重新获取数据
 const doTableChange = (page: any) => {
   searchParams.current = page.current
   searchParams.pageSize = page.pageSize
   fetchData()
 }
 
-// 搜索数据
 const doSearch = () => {
-  // 重置页码
   searchParams.current = 1
   fetchData()
 }
 
-// 删除数据
-const doDelete = async (id: string | number) => {
+const getTags = (tags?: string): string[] => {
+  if (!tags) {
+    return []
+  }
+  try {
+    const parsedTags = JSON.parse(tags)
+    return Array.isArray(parsedTags) ? parsedTags.filter((tag): tag is string => typeof tag === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+const getReviewBadgeStatus = (reviewStatus?: number) => {
+  const status = Number(reviewStatus)
+  if (status === PIC_REVIEW_STATUS_ENUM.PASS) return 'success'
+  if (status === PIC_REVIEW_STATUS_ENUM.REJECT) return 'error'
+  return 'processing'
+}
+
+const getReviewStatusText = (reviewStatus?: number) => {
+  return PIC_REVIEW_STATUS_MAP[Number(reviewStatus)] || PIC_REVIEW_STATUS_MAP[PIC_REVIEW_STATUS_ENUM.REVIEWING]
+}
+
+const formatDate = (date?: string) => {
+  return date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : '—'
+}
+
+const openDetail = (record: API.Picture) => {
+  currentPicture.value = record
+  detailDrawerOpen.value = true
+}
+
+const doDelete = async (id: string | number | undefined) => {
   if (!id) {
     return
   }
   const res = await deletePictureUsingPost({ id })
   if (res.data.code === 0) {
     message.success('删除成功')
-    // 刷新数据
     fetchData()
   } else {
     message.error('删除失败')
   }
 }
 
-// 审核图片
 const handleReview = async (record: API.Picture, reviewStatus: number) => {
   const reviewMessage =
     reviewStatus === PIC_REVIEW_STATUS_ENUM.PASS ? '管理员操作通过' : '管理员操作拒绝'
@@ -287,7 +345,6 @@ const handleReview = async (record: API.Picture, reviewStatus: number) => {
   })
   if (res.data.code === 0) {
     message.success('审核操作成功')
-    // 重新获取列表数据
     fetchData()
   } else {
     message.error('审核操作失败，' + res.data.message)
@@ -296,6 +353,10 @@ const handleReview = async (record: API.Picture, reviewStatus: number) => {
 </script>
 
 <style scoped>
+.admin-table-card {
+  margin-top: 16px;
+}
+
 .compact-admin-table :deep(.ant-table) {
   table-layout: fixed;
 }
@@ -318,5 +379,78 @@ const handleReview = async (record: API.Picture, reviewStatus: number) => {
 .picture-thumb :deep(img) {
   border-radius: 10px;
   object-fit: cover;
+}
+
+.asset-cell,
+.owner-cell,
+.review-cell {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.asset-name {
+  max-width: 100%;
+  color: var(--pb-ink, #262a3b);
+  font-weight: 700;
+}
+
+.asset-tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.asset-tags :deep(.ant-tag) {
+  margin-inline-end: 0;
+}
+
+.owner-cell,
+.review-cell span {
+  overflow: hidden;
+  color: var(--pb-muted, #71809a);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-cell {
+  column-gap: 2px;
+  row-gap: 0;
+}
+
+.drawer-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f1f4ff, #f7fbff);
+}
+
+.drawer-preview :deep(.ant-image),
+.drawer-preview :deep(img) {
+  max-width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+}
+
+.color-dot {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 50%;
+}
+
+.url-value {
+  max-width: 300px;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 </style>

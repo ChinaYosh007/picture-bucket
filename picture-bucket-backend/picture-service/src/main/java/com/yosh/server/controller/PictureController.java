@@ -3,13 +3,11 @@ package com.yosh.server.controller;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yosh.common.constants.UserConstant;
+import com.yosh.common.enums.PictureReviewStatusEnum;
 import com.yosh.common.exception.BusinessException;
 import com.yosh.common.exception.ErrorCode;
 import com.yosh.common.exception.ThrowUtils;
-import com.yosh.common.model.dto.picture.PictureEditRequest;
-import com.yosh.common.model.dto.picture.PictureQueryRequest;
-import com.yosh.common.model.dto.picture.PictureUpdateRequest;
-import com.yosh.common.model.dto.picture.PictureUploadRequest;
+import com.yosh.common.model.dto.picture.*;
 import com.yosh.common.model.entry.Picture;
 import com.yosh.common.model.vo.LoginUserVO;
 import com.yosh.common.model.vo.PictureTagCategory;
@@ -37,12 +35,36 @@ public class PictureController {
     private UserService userService;
     @Resource
     private PictureService pictureService;
-    @PostMapping("/upload")
+
+
+    /**
+     * 审核图片
+     * @param pictureReviewRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/review")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewRequest pictureReviewRequest,HttpServletRequest  request) {
+
+        ThrowUtils.throwIf(pictureReviewRequest == null || pictureReviewRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getLoginUser(request);
+        pictureService.doPictureReview(pictureReviewRequest, loginUser);
+        return ResultUtils.success(true);
+    }
+    @PostMapping("/upload")
     public BaseResponse<PictureVO> uploadFile(@RequestParam("file") MultipartFile file, @ModelAttribute  PictureUploadRequest uploadRequest, HttpServletRequest  request) {
 
         LoginUserVO loginUser = userService.getLoginUser(request);
         PictureVO pic = pictureService.uploadPicture(file, uploadRequest, loginUser);
+        return ResultUtils.success(pic);
+    }
+    @PostMapping("/upload/url")
+    public BaseResponse<PictureVO> uploadUrl(@RequestBody PictureUploadRequest uploadRequest, HttpServletRequest  request) {
+
+        ThrowUtils.throwIf(uploadRequest == null || uploadRequest.getUrl() == null, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getLoginUser(request);
+        PictureVO pic = pictureService.uploadPicture(uploadRequest.getUrl(), uploadRequest, loginUser);
         return ResultUtils.success(pic);
     }
     /**
@@ -73,10 +95,12 @@ public class PictureController {
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest) {
+    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest,HttpServletRequest  request) {
         if (pictureUpdateRequest == null || pictureUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getLoginUser(request);
         // 将实体类和 DTO 进行转换
         Picture picture = Picture.builder().build();
         BeanUtils.copyProperties(pictureUpdateRequest, picture);
@@ -88,6 +112,7 @@ public class PictureController {
         long id = pictureUpdateRequest.getId();
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        pictureService.fillReviewParms(picture, loginUser);
         // 操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -145,6 +170,8 @@ public class PictureController {
         long size = pictureQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        // 只查询审核通过的图片---user
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
         // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
@@ -170,6 +197,7 @@ public class PictureController {
         // 数据校验
         pictureService.validPicture(picture);
         LoginUserVO loginUser = userService.getLoginUser(request);
+        pictureService.fillReviewParms(picture, loginUser);
         // 判断是否存在
         long id = pictureEditRequest.getId();
         Picture oldPicture = pictureService.getById(id);
@@ -192,6 +220,18 @@ public class PictureController {
         pictureTagCategory.setCategoryList(categoryList);
         return ResultUtils.success(pictureTagCategory);
     }
+    @PostMapping("/upload/batch")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Integer> uploadPictureByBatch(
+            @RequestBody PictureUploadByBatchRequest pictureUploadByBatchRequest,
+            HttpServletRequest request
+    ) {
+        ThrowUtils.throwIf(pictureUploadByBatchRequest == null, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getLoginUser(request);
+        int uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest, loginUser);
+        return ResultUtils.success(uploadCount);
+    }
+
 
 
 
