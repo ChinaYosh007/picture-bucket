@@ -183,3 +183,18 @@ export async function editUserUsingPost(
     ...(options || {}),
   })
 }
+
+/** updatePassword POST /api/user/password/update */
+export async function updatePasswordUsingPost(
+  body: API.UserPasswordUpdateRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean_>('/api/user/password/update', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}

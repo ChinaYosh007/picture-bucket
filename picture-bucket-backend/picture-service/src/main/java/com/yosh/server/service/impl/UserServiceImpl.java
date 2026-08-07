@@ -14,6 +14,7 @@ import com.yosh.common.exception.ErrorCode;
 import com.yosh.common.exception.ThrowUtils;
 import com.yosh.common.model.core.MailCore;
 import com.yosh.common.model.dto.user.UserLoginRequest;
+import com.yosh.common.model.dto.user.UserPasswordUpdateRequest;
 import com.yosh.common.model.dto.user.UserQueryRequest;
 import com.yosh.common.model.dto.user.UserRegisterRequest;
 import com.yosh.common.model.entry.User;
@@ -244,6 +245,31 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
+    public boolean updateUserPassword(long userId, UserPasswordUpdateRequest request) {
+        ThrowUtils.throwIf(userId <= 0 || request == null, ErrorCode.PARAMS_ERROR);
+
+        String currentPassword = request.getCurrentPassword();
+        String newPassword = request.getNewPassword();
+        String confirmPassword = request.getConfirmPassword();
+        ThrowUtils.throwIf(StrUtil.hasBlank(currentPassword, newPassword, confirmPassword),
+                ErrorCode.PARAMS_ERROR, "当前密码、新密码和确认密码不能为空");
+        ThrowUtils.throwIf(newPassword.length() < 8 || newPassword.length() > 64,
+                ErrorCode.PARAMS_ERROR, "新密码长度必须为 8 到 64 位");
+        ThrowUtils.throwIf(!newPassword.equals(confirmPassword),
+                ErrorCode.PARAMS_ERROR, "两次输入的新密码不一致");
+        ThrowUtils.throwIf(currentPassword.equals(newPassword),
+                ErrorCode.PARAMS_ERROR, "新密码不能与当前密码相同");
+
+        User user = this.getById(userId);
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_FOUND_ERROR);
+        ThrowUtils.throwIf(!PASSWORD_ENCODER.matches(currentPassword, user.getUserPassword()),
+                ErrorCode.PARAMS_ERROR, "当前密码不正确");
+
+        user.setUserPassword(getEncryptPassword(newPassword));
+        return this.updateById(user);
+    }
+
+    @Override
     public void sendEmailCode(String accountOrEmail) {
         String email = resolveEmailForCode(accountOrEmail);
 
@@ -275,6 +301,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 UserConstant.EMAIL_CODE_PREFIX + email,
                 emailCode,
                 Duration.ofSeconds(UserConstant.EMAIL_CODE_EXPIRE_TIME));
+    }
+
+    @Override
+    public void verifyEmailCode(String email, String emailCode) {
+        String normalizedEmail = normalizeEmail(email);
+        String normalizedCode = StrUtil.trim(emailCode);
+        ThrowUtils.throwIf(normalizedCode.length() != 6,
+                ErrorCode.PARAMS_ERROR, "邮箱验证码格式不正确");
+
+        String savedEmailCode = stringRedisTemplate.opsForValue()
+                .getAndDelete(UserConstant.EMAIL_CODE_PREFIX + normalizedEmail);
+        ThrowUtils.throwIf(!Objects.equals(normalizedCode, savedEmailCode),
+                ErrorCode.PARAMS_ERROR, "邮箱验证码错误或已失效");
     }
 
     @Override

@@ -122,7 +122,7 @@ const canDelete = createPermissionChecker(SPACE_PERMISSION_ENUM.PICTURE_DELETE)
 const fetchPictureDetail = async () => {
   try {
     const res = await getPictureVoByIdUsingGet({
-      id: Number(props.id),
+      id: String(props.id),
     })
     if (res.data.code === 0 && res.data.data) {
       picture.value = res.data.data

@@ -1,9 +1,9 @@
 export default class PictureEditWebSocket {
-  private pictureId: number
+  private pictureId: number | string
   private socket: WebSocket | null
   private eventHandlers: any
 
-  constructor(pictureId: number) {
+  constructor(pictureId: number | string) {
     this.pictureId = pictureId // 当前编辑的图片 ID
     this.socket = null // WebSocket 实例
     this.eventHandlers = {} // 自定义事件处理器

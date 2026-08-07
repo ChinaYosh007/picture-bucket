@@ -10,6 +10,7 @@ import com.yosh.common.exception.ThrowUtils;
 import com.yosh.common.model.dto.user.UserAddRequest;
 import com.yosh.common.model.dto.user.UserEditRequest;
 import com.yosh.common.model.dto.user.UserLoginRequest;
+import com.yosh.common.model.dto.user.UserPasswordUpdateRequest;
 import com.yosh.common.model.dto.user.UserQueryRequest;
 import com.yosh.common.model.dto.user.UserRegisterRequest;
 import com.yosh.common.model.dto.user.UserUpdateRequest;
@@ -106,12 +107,16 @@ public class UserController {
         ThrowUtils.throwIf(UserRoleEnum.getEnum(userRole) == null,
                 ErrorCode.PARAMS_ERROR, "用户角色不合法");
 
+
         User user = User.builder().build();
+
         BeanUtils.copyProperties(userAddRequest, user);
+        user.setUserPassword(userService.getEncryptPassword(userAddRequest.getUserPassword()));
         user.setUserAccount(userAccount);
         user.setEmail(email);
         user.setUserRole(userRole);
-        user.setUserPassword(userService.getEncryptPassword(userAddRequest.getUserPassword()));
+        String rawPassword = userAddRequest.getUserPassword();
+        user.setUserPassword(userService.getEncryptPassword(rawPassword));
         ThrowUtils.throwIf(!userService.save(user), ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(user.getId());
     }
@@ -140,10 +145,41 @@ public class UserController {
 
         User user = User.builder().build();
         user.setId(loginUser.getId());
+        boolean identityChanged = false;
+
+        if (userEditRequest.getUserAccount() != null) {
+            String userAccount = normalizeUserAccount(userEditRequest.getUserAccount());
+            ThrowUtils.throwIf(userService.lambdaQuery()
+                            .eq(User::getUserAccount, userAccount)
+                            .ne(User::getId, loginUser.getId())
+                            .exists(),
+                    ErrorCode.PARAMS_ERROR, "账号已存在");
+            user.setUserAccount(userAccount);
+            identityChanged = !userAccount.equals(loginUser.getUserAccount());
+        }
+
+        if (userEditRequest.getEmail() != null) {
+            String email = StrUtil.trim(userEditRequest.getEmail()).toLowerCase(Locale.ROOT);
+            ThrowUtils.throwIf(!Validator.isEmail(email), ErrorCode.PARAMS_ERROR, "邮箱格式不正确");
+            if (!email.equals(loginUser.getEmail())) {
+                ThrowUtils.throwIf(userService.lambdaQuery()
+                                .eq(User::getEmail, email)
+                                .ne(User::getId, loginUser.getId())
+                                .exists(),
+                        ErrorCode.PARAMS_ERROR, "邮箱已存在");
+                userService.verifyEmailCode(email, userEditRequest.getEmailCode());
+                identityChanged = true;
+            }
+            user.setEmail(email);
+        }
+
         user.setUserName(userEditRequest.getUserName());
         user.setUserAvatar(userEditRequest.getUserAvatar());
         user.setUserProfile(userEditRequest.getUserProfile());
         ThrowUtils.throwIf(!userService.updateById(user), ErrorCode.OPERATION_ERROR);
+        if (identityChanged) {
+            httpRequest.changeSessionId();
+        }
         return ResultUtils.success(true);
     }
 
@@ -160,6 +196,19 @@ public class UserController {
     }
 
     /** 更新用户的可编辑资料；请求对象不含密码，避免意外覆盖。 */
+    /**
+     * Update the current user's password and rotate the current session identifier.
+     */
+    @PostMapping("/password/update")
+    public BaseResponse<Boolean> updatePassword(@RequestBody UserPasswordUpdateRequest passwordUpdateRequest,
+                                                HttpServletRequest httpRequest) {
+        LoginUserVO loginUser = userService.getLoginUser(httpRequest);
+        ThrowUtils.throwIf(!userService.updateUserPassword(loginUser.getId(), passwordUpdateRequest),
+                ErrorCode.OPERATION_ERROR);
+        httpRequest.changeSessionId();
+        return ResultUtils.success(true);
+    }
+
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
