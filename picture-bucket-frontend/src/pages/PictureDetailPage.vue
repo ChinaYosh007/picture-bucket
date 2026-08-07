@@ -167,7 +167,13 @@ const doDelete = async () => {
 
 // 下载图片
 const doDownload = () => {
-  downloadImage(picture.value.url)
+  if (!picture.value.url) return
+  let name = picture.value.name || 'picture'
+  const format = (picture.value.picFormat || 'jpg').toLowerCase()
+  if (!name.toLowerCase().endsWith(`.${format}`)) {
+    name = `${name}.${format}`
+  }
+  downloadImage(picture.value.url, name)
 }
 
 // ----- 分享操作 ----
