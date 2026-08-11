@@ -1,5 +1,6 @@
 package com.yosh.server.manger.upload;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ObjUtil;
@@ -7,7 +8,9 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.model.PutObjectResult;
+import com.qcloud.cos.model.ciModel.persistence.CIObject;
 import com.qcloud.cos.model.ciModel.persistence.ImageInfo;
+import com.qcloud.cos.model.ciModel.persistence.ProcessResults;
 import com.yosh.common.exception.BusinessException;
 import com.yosh.common.exception.ErrorCode;
 import com.yosh.common.exception.ThrowUtils;
@@ -67,6 +70,29 @@ public abstract class PictureUploadTemplate {
             String upFileName = String.format("%s%s_%s.%s", formattedPrefix, DateUtil.formatDate(new Date()), uuid, suffix);
 
             PutObjectResult putObjectResult = cosManger.uploadFileAndGet(upFileName, tempFile);
+            // 获取压缩图片处理结果
+            ProcessResults processResults = putObjectResult.getCiUploadResult().getProcessResults();
+            List<CIObject> objectList = processResults.getObjectList();
+            if(CollUtil.isNotEmpty(objectList)){
+                // 压缩
+               CIObject ciObject = objectList.getFirst();
+                CIObject thumbnail = ciObject;
+               //缩略图
+                if( objectList.size() > 1){
+                    thumbnail = objectList.get(1);
+                }
+
+               return UploadPictureResult.builder()
+                       .url(cosManger.getObjectUrl(upFileName))
+                       .picName(ciObject.getKey())
+                       .picSize(FileUtil.size(tempFile))
+                       .picWidth(ciObject.getWidth())
+                       .picHeight(ciObject.getHeight())
+                       .picScale(ciObject.getWidth() * 1.0 / ciObject.getHeight())
+                       .picFormat(ciObject.getFormat())
+                       .thumbnailUrl(cosClientConfig.getHost() + "/" + thumbnail.getKey())
+                       .build();
+            }
             ImageInfo imageInfo = putObjectResult.getCiUploadResult().getOriginalInfo().getImageInfo();
 
             String mainName = FileUtil.mainName(fileName);

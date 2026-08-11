@@ -125,4 +125,9 @@ public class Picture implements Serializable {
     @TableField(exist = false)
     @Serial
     private static final long serialVersionUID = 1L;
+    /**
+     * 缩略图 url
+     */
+    private String thumbnailUrl;
+
 }

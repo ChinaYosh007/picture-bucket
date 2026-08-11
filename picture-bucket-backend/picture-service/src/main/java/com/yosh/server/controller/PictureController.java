@@ -1,7 +1,12 @@
 package com.yosh.server.controller;
 
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.yosh.common.constants.PicutreConstant;
 import com.yosh.common.constants.UserConstant;
 import com.yosh.common.enums.PictureReviewStatusEnum;
 import com.yosh.common.exception.BusinessException;
@@ -21,12 +26,15 @@ import com.yosh.server.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/picture")
@@ -35,6 +43,15 @@ public class PictureController {
     private UserService userService;
     @Resource
     private PictureService pictureService;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+    private final Cache<String, String> LOCAL_CACHE =
+            Caffeine.newBuilder().initialCapacity(1024)
+                    .maximumSize(10000L)
+                    // 缓存 5 分钟移除
+                    .expireAfterWrite(5L, TimeUnit.MINUTES)
+                    .build();
+
 
 
     /**
@@ -87,6 +104,7 @@ public class PictureController {
         // 操作数据库
         boolean result = pictureService.removeById(id);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        pictureService.clearPicture(oldPicture);
         return ResultUtils.success(true);
     }
 
@@ -114,6 +132,8 @@ public class PictureController {
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
         pictureService.fillReviewParms(picture, loginUser);
         // 操作数据库
+        pictureService.clearPicture(oldPicture);
+
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
@@ -178,6 +198,39 @@ public class PictureController {
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
     }
+    /**
+     * 分页获取图片列表（封装类）
+     */
+    @PostMapping("/list/page/vo/cache")
+    public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest,
+                                                             HttpServletRequest request) {
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
+        // 限制爬虫
+        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        // 只查询审核通过的图片---user
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        //查询缓存，看缓存中是否含有数据
+        String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
+        String key = DigestUtil.md5Hex(queryCondition);
+        String redisKey = String.format("%s:%s", PicutreConstant.LIST_QUERY_prefix,key);
+//        ValueOperations<String, String> opsForValue = stringRedisTemplate.opsForValue();
+//        String cacheData = opsForValue.get(redisKey);
+        String cacheData = LOCAL_CACHE.getIfPresent(redisKey);
+        if(cacheData != null){
+            Page<PictureVO> bean = JSONUtil.toBean(cacheData, Page.class);
+            return ResultUtils.success(bean);
+        }
+
+        // 查询数据库
+        Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
+                pictureService.getQueryWrapper(pictureQueryRequest));
+        // 获取封装类
+        Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
+        LOCAL_CACHE.put(redisKey, JSONUtil.toJsonStr(pictureVOPage));
+        return ResultUtils.success(pictureVOPage);
+    }
+
 
     /**
      * 编辑图片（给用户使用）

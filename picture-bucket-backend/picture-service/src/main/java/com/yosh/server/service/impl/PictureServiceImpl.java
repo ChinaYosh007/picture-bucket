@@ -25,6 +25,7 @@ import com.yosh.common.model.vo.LoginUserVO;
 import com.yosh.common.model.vo.PictureVO;
 import com.yosh.common.model.vo.UserVO;
 
+import com.yosh.server.manger.CosManger;
 import com.yosh.server.manger.upload.FilePictureUpload;
 import com.yosh.server.manger.upload.UrlPictureUpload;
 import com.yosh.server.mapper.PictureMapper;
@@ -36,6 +37,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -63,6 +66,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     private UrlPictureUpload urlPictureUpload;
     @Resource
     private UserService userService;
+    @Autowired
+    private CosManger cosManger;
 
     @Override
     public PictureVO uploadPicture(Object inputSources, PictureUploadRequest uploadRequest, LoginUserVO loginUser){
@@ -95,6 +100,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 .picHeight(uploadPictureResult.getPicHeight())
                 .picScale(uploadPictureResult.getPicScale())
                 .picFormat(uploadPictureResult.getPicFormat())
+                .thumbnailUrl(uploadPictureResult.getThumbnailUrl())
                 .userId(oldPicture == null ? loginUser.getId() : oldPicture.getUserId())
                 .updateTime(new Date())
                 .build();
@@ -301,6 +307,22 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "抓取 Bing 图片失败");
+        }
+    }
+
+    @Async
+    @Override
+    public void clearPicture(Picture picture) {
+        // 判断是否被多条使用
+        String picUrl = picture.getUrl();
+        Long count = this.lambdaQuery().eq(Picture::getUrl, picUrl).count();
+        if(count > 1){
+            return;
+        }
+        cosManger.deleteFile(picUrl);
+        String thumbnailUrl = picture.getThumbnailUrl();
+        if(StrUtil.isNotBlank(thumbnailUrl)) {
+            cosManger.deleteFile(thumbnailUrl);
         }
     }
 
