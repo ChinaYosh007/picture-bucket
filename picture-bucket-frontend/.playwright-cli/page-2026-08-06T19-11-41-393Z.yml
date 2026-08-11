@@ -1,0 +1,61 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e5]:
+    - generic [ref=f1e8]:
+      - link "logo PICTURE BUCKET Cloud Gallery" [ref=f1e10] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f1e11]:
+          - img "logo" [ref=f1e13]
+          - generic [ref=f1e14]:
+            - generic [ref=f1e15]: PICTURE BUCKET
+            - generic [ref=f1e16]: Cloud Gallery
+      - menu [ref=f1e18]:
+        - menuitem "home 主页" [ref=f1e19] [cursor=pointer]:
+          - img "home" [ref=f1e20]
+          - generic [ref=f1e23]: 主页
+        - menuitem "创建图片" [ref=f1e24] [cursor=pointer]
+      - generic [ref=f1e28]:
+        - link "登录" [ref=f1e29] [cursor=pointer]:
+          - /url: /user/login
+        - link "注 册" [ref=f1e31] [cursor=pointer]:
+          - /url: /user/register
+    - main [ref=f1e35]:
+      - generic [ref=f1e38]:
+        - generic [ref=f1e39]:
+          - generic: ✦
+          - generic: ✧
+          - generic [ref=f1e40]:
+            - img "登录小助手" [ref=f1e43]
+            - generic [ref=f1e44]: 我、我不看啦！
+          - generic [ref=f1e45]:
+            - generic [ref=f1e46]: PICTURE BUCKET
+            - generic [ref=f1e47]: 你的云端灵感图库
+        - generic [ref=f1e48]:
+          - generic [ref=f1e49]: Picture Bucket
+          - heading "欢迎回来" [level=2] [ref=f1e50]
+          - generic [ref=f1e51]: 使用邮箱或账号 + 密码 + 验证码登录
+          - generic [ref=f1e52]:
+            - generic [ref=f1e54]:
+              - generic "邮箱 / 账号" [ref=f1e56]: "* 邮箱 / 账号"
+              - textbox "* 邮箱 / 账号" [ref=f1e61]:
+                - /placeholder: 邮箱或用户账号
+            - generic [ref=f1e64]:
+              - generic "密码" [ref=f1e66]: "* 密码"
+              - generic [ref=f1e70]:
+                - textbox "* 密码" [active] [ref=f1e71]:
+                  - /placeholder: 请输入密码
+                - img "eye-invisible" [ref=f1e73] [cursor=pointer]
+            - generic [ref=f1e78]:
+              - generic "邮箱验证码" [ref=f1e80]: "* 邮箱验证码"
+              - generic [ref=f1e84]:
+                - textbox "* 邮箱验证码" [ref=f1e86]:
+                  - /placeholder: 6 位验证码
+                - button "获取验证码" [ref=f1e88] [cursor=pointer]
+            - generic [ref=f1e90]:
+              - text: 没有账号？
+              - link "去注册" [ref=f1e91] [cursor=pointer]:
+                - /url: /user/register
+            - button "登 录" [ref=f1e97] [cursor=pointer]
+    - generic [ref=f1e99]: Picture Bucket·让每一张图片都有舒服的位置
+  - generic [ref=f1e100]:
+    - generic "Toggle devtools panel" [ref=f1e101] [cursor=pointer]
+    - generic "Toggle Component Inspector" [ref=f1e107] [cursor=pointer]

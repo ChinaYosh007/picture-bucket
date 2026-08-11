@@ -16,12 +16,18 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+
 @Service
 @Slf4j
-public class UrlPictureUpload extends PictureUploadTemplate{
+public class UrlPictureUpload extends PictureUploadTemplate {
     @Override
     protected String getOriginalFilename(Object inputSource) {
-        return FileUtil.mainName( inputSource.toString());
+        String url = inputSource.toString();
+        int idx = url.indexOf("?");
+        if (idx > 0) {
+            url = url.substring(0, idx);
+        }
+        return FileUtil.getName(url);
     }
 
     @Override
@@ -31,39 +37,34 @@ public class UrlPictureUpload extends PictureUploadTemplate{
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "下载文件失败");
         }
-
     }
 
     @Override
     protected void validPicture(Object inputResource) {
         ThrowUtils.throwIf(inputResource == null, ErrorCode.PARAMS_ERROR, "上传文件为空");
         String url = inputResource.toString();
-        ThrowUtils.throwIf(url == null, ErrorCode.PARAMS_ERROR, "文件地址为空");
-        try{
+        ThrowUtils.throwIf(StrUtil.isBlank(url), ErrorCode.PARAMS_ERROR, "文件地址为空");
+        try {
             new URL(url);
         } catch (MalformedURLException e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"文件地址格式不正确");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "文件地址格式不正确");
         }
-        ThrowUtils.throwIf(!url.startsWith("https://"), ErrorCode.SYSTEM_ERROR, "文件地址格式不支持");
-        try(HttpResponse execute = HttpUtil.createRequest(Method.HEAD, url)
-                .execute()) {
-            if(execute.getStatus() != HttpStatus.HTTP_OK){
+        ThrowUtils.throwIf(!url.startsWith("https://") && !url.startsWith("http://"), ErrorCode.SYSTEM_ERROR, "文件地址格式不支持");
+        try (HttpResponse execute = HttpUtil.createRequest(Method.HEAD, url).execute()) {
+            if (execute.getStatus() != HttpStatus.HTTP_OK) {
                 return;
             }
             String header = execute.header("Content-Type");
-            if(!StrUtil.isNotBlank( header)){
+            if (StrUtil.isNotBlank(header)) {
                 final List<String> SUFFIX_LIST = List.of("image/png", "image/jpg", "image/jpeg", "image/webp");
-                ThrowUtils.throwIf(!SUFFIX_LIST.contains(header), ErrorCode.SYSTEM_ERROR, "文件地址格式不支持");
-
+                ThrowUtils.throwIf(!SUFFIX_LIST.contains(header.toLowerCase()), ErrorCode.SYSTEM_ERROR, "文件地址格式不支持");
             }
             header = execute.header("Content-Length");
-            if(!StrUtil.isNotBlank( header)){
+            if (StrUtil.isNotBlank(header)) {
                 final long ONE_MB = 1024 * 1024 * 3;
                 long size = Long.parseLong(header);
-                ThrowUtils.throwIf( size > ONE_MB, ErrorCode.SYSTEM_ERROR, "太大了人家受不了~");
+                ThrowUtils.throwIf(size > ONE_MB, ErrorCode.SYSTEM_ERROR, "文件体积超出限制");
             }
-
         }
-
     }
 }

@@ -278,6 +278,7 @@ export async function uploadPictureByBatchUsingPost(
       'Content-Type': 'application/json',
     },
     data: body,
+    timeout: 600000,
     ...(options || {}),
   })
 }
