@@ -93,6 +93,9 @@ public class PictureController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         LoginUserVO loginUser = userService.getLoginUser(request);
+        pictureService.deletePicture(deleteRequest.getId(), loginUser);
+        return ResultUtils.success(true);
+        /*
         long id = deleteRequest.getId();
         // 判断是否存在
         Picture oldPicture = pictureService.getById(id);
@@ -106,6 +109,7 @@ public class PictureController {
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         pictureService.clearPicture(oldPicture);
         return ResultUtils.success(true);
+        */
     }
 
     /**
@@ -149,6 +153,10 @@ public class PictureController {
         // 查询数据库
         Picture picture = pictureService.getById(id);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
+        if (picture.getSpaceId() != null) {
+            LoginUserVO loginUser = userService.getLoginUser(request);
+            pictureService.checkPictureAuth(loginUser, picture);
+        }
         // 获取封装类
         return ResultUtils.success(picture);
     }
@@ -162,6 +170,10 @@ public class PictureController {
         // 查询数据库
         Picture picture = pictureService.getById(id);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
+        if (picture.getSpaceId() != null) {
+            LoginUserVO loginUser = userService.getLoginUser(request);
+            pictureService.checkPictureAuth(loginUser, picture);
+        }
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVO(picture, request));
     }
@@ -191,7 +203,7 @@ public class PictureController {
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         // 只查询审核通过的图片---user
-        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        checkPictureQueryAuth(pictureQueryRequest, request);
         // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
@@ -209,7 +221,7 @@ public class PictureController {
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         // 只查询审核通过的图片---user
-        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        checkPictureQueryAuth(pictureQueryRequest, request);
         //查询缓存，看缓存中是否含有数据
         String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
         String key = DigestUtil.md5Hex(queryCondition);
@@ -250,6 +262,9 @@ public class PictureController {
         // 数据校验
         pictureService.validPicture(picture);
         LoginUserVO loginUser = userService.getLoginUser(request);
+        pictureService.editPicture(pictureEditRequest, loginUser);
+        return ResultUtils.success(true);
+        /*
         pictureService.fillReviewParms(picture, loginUser);
         // 判断是否存在
         long id = pictureEditRequest.getId();
@@ -263,7 +278,39 @@ public class PictureController {
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
+        */
     }
+
+    private void checkPictureQueryAuth(PictureQueryRequest pictureQueryRequest,
+                                       HttpServletRequest request) {
+        LoginUserVO loginUser = pictureQueryRequest.getSpaceId() == null
+                ? null : userService.getLoginUser(request);
+        pictureService.checkPictureQueryAuth(pictureQueryRequest, loginUser);
+    }
+
+    /*
+    @Deprecated
+    private void legacyCheckPictureQueryAuth(PictureQueryRequest pictureQueryRequest,
+                                       HttpServletRequest request) {
+        LoginUserVO queryLoginUser = pictureQueryRequest.getSpaceId() == null
+                ? null : userService.getLoginUser(request);
+        pictureService.checkPictureQueryAuth(pictureQueryRequest, queryLoginUser);
+        if (true) {
+            return;
+        }
+        Long spaceId = pictureQueryRequest.getSpaceId();
+        if (spaceId == null) {
+            pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+            pictureQueryRequest.setNullSpaceId(true);
+            return;
+        }
+        LoginUserVO loginUser = userService.getLoginUser(request);
+        com.yosh.common.model.entry.Space space = spaceService.getById(spaceId);
+        ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+        ThrowUtils.throwIf(!loginUser.getId().equals(space.getUserId()),
+                ErrorCode.NO_AUTH_ERROR, "没有空间权限");
+    }
+    */
     @GetMapping("/tag_category")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
         PictureTagCategory pictureTagCategory = new PictureTagCategory();
