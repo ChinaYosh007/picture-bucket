@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.IService;
 import com.yosh.common.model.dto.picture.PictureQueryRequest;
+import com.yosh.common.model.dto.picture.PictureEditRequest;
 import com.yosh.common.model.dto.picture.PictureReviewRequest;
 import com.yosh.common.model.dto.picture.PictureUploadByBatchRequest;
 import com.yosh.common.model.dto.picture.PictureUploadRequest;
@@ -41,6 +42,14 @@ public interface PictureService extends IService<Picture> {
     void doPictureReview(PictureReviewRequest pictureReviewRequest, LoginUserVO loginUser);
 
     void fillReviewParms(Picture picture, LoginUserVO loginUser);
+
+    void checkPictureAuth(LoginUserVO loginUser, Picture picture);
+
+    void deletePicture(long pictureId, LoginUserVO loginUser);
+
+    void editPicture(PictureEditRequest pictureEditRequest, LoginUserVO loginUser);
+
+    void checkPictureQueryAuth(PictureQueryRequest pictureQueryRequest, LoginUserVO loginUser);
     /**
      * 批量抓取和创建图片
      *
